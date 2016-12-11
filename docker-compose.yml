@@ -9,27 +9,30 @@ services:
     networks:
       - distributed
     links:
-        - dscheduler
+        - dask-scheduler
     container_name: jupyter
 
-  dscheduler:
+  dask-scheduler:
     image: ogrisel/distributed:latest
     ports:
      - "8786:8786"
      - "9786:9786"
      - "8787:8787"
-    command: start-dscheduler.sh
+     - "8788:8788"
+    command: start-dask-scheduler.sh
     networks:
       - distributed
-    container_name: dscheduler
+    container_name: dask-scheduler
 
-  dworker:
+  dask-worker:
+    ports:
+     - "8789:8789"
     image: ogrisel/distributed:latest
-    command: start-dworker.sh
+    command: start-dask-worker.sh
     networks:
       - distributed
     links:
-        - dscheduler
+        - dask-scheduler
 
 networks:
   distributed:
