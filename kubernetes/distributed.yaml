@@ -12,8 +12,6 @@ spec:
     - port: 9786
       targetPort: 9786
       name: dask-scheduler-http
-    - port: 8788
-      targetPort: 8788
   selector:
     name: dask-scheduler
 ---
@@ -28,6 +26,10 @@ spec:
   ports:
     - port: 8787
       targetPort: 8787
+      name: dask-scheduler-external-bokeh
+    - port: 8788
+      targetPort: 8788
+      name: dask-scheduler-internal-bokeh
   selector:
     name: dask-scheduler
 ---
@@ -48,8 +50,8 @@ spec:
     spec:
       containers:
         - name: dask-scheduler
-          image: ogrisel/distributed:latest
-          args: ["start-dask-scheduler.sh"]
+          image: mrocklin/dask-test:1
+          args: ["/opt/anaconda/bin/dask-scheduler", "--host", "dask-scheduler"]
           ports:
           - name: rpc
             containerPort: 8786
@@ -71,5 +73,5 @@ spec:
     spec:
       containers:
         - name: dask-worker
-          image: ogrisel/distributed:latest
-          args: ["start-dask-worker.sh"]
+          image: mrocklin/dask-test:1
+          args: ["/opt/anaconda/bin/dask-worker", "dask-scheduler:8786"]
