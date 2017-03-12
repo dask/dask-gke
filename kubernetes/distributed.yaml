@@ -4,6 +4,7 @@ metadata:
   name: dask-scheduler
   labels:
     name: dask-scheduler
+    app: distributed
 spec:
   ports:
     - port: 8786
@@ -21,6 +22,7 @@ metadata:
   name: dask-scheduler-status
   labels:
     name: dask-scheduler-status
+    app: distributed
 spec:
   type: LoadBalancer
   ports:
@@ -39,6 +41,7 @@ metadata:
   name: dask-worker-status
   labels:
     name: dask-worker-status
+    app: distributed
 spec:
   type: LoadBalancer
   ports:
@@ -53,6 +56,7 @@ kind: ReplicationController
 metadata:
   labels:
     name: dask-scheduler
+    app: distributed
   name: dask-scheduler
 spec:
   replicas: 1
@@ -65,24 +69,32 @@ spec:
     spec:
       containers:
         - name: dask-scheduler
-          image: mrocklin/dask-test:1
-          args: ["/opt/anaconda/bin/dask-scheduler", "--host", "dask-scheduler"]
+          image: mydistributed2
+          args: ["dask-scheduler"]
           ports:
           - name: rpc
             containerPort: 8786
+          - name: http
+            containerPort: 9786
+          - name: bokeh-internal
+            containerPort: 8788
+          - name: bokeh
+            containerPort: 8787
           resources:
             requests: 
-              cpu: 1
-              memory: 10000Mi
+              cpu: 500m
+              memory: 100Mi
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: v1
 kind: ReplicationController
 metadata:
   labels:
     name: dask-worker
+    app: distributed
   name: dask-worker
 spec:
-  replicas: 10
+  replicas: 2
   selector:
     name: dask-worker
   template:
@@ -92,9 +104,13 @@ spec:
     spec:
       containers:
         - name: dask-worker
-          image: mrocklin/dask-test:1
-          args: ["/opt/anaconda/bin/dask-worker", "dask-scheduler:8786", '--memory-limit', "5e9"]
+          image: mydistributed2
+          args: ["dask-worker", "dask-scheduler:8786"]
           resources:
-            requests: 
-              cpu: 2
-              memory: 8000Mi
+            requests:
+              cpu: 200m
+              memory: 100Mi
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+          workingDir: /work
