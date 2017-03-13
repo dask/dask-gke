@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jupyter-notebook
+  labels:
+    name: jupyter-notebook
+    app: distributed
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8888
+      targetPort: 8888
+      name: jupyter-http
+  selector:
+    name: jupyter-notebook
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dask-scheduler
+  labels:
+    name: dask-scheduler
+    app: distributed
+spec:
+  ports:
+    - port: 8786
+      targetPort: 8786
+      name: dask-scheduler-tcp
+    - port: 9786
+      targetPort: 9786
+      name: dask-scheduler-http
+  selector:
+    name: dask-scheduler
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dask-scheduler-status
+  labels:
+    name: dask-scheduler-status
+    app: distributed
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8787
+      targetPort: 8787
+      name: dask-scheduler-external-bokeh
+    - port: 8788
+      targetPort: 8788
+      name: dask-scheduler-internal-bokeh
+  selector:
+    name: dask-scheduler
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dask-worker-status
+  labels:
+    name: dask-worker-status
+    app: distributed
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8789
+      targetPort: 8789
+      name: dask-worker-internal-bokeh
+  selector:
+    name: dask-worker

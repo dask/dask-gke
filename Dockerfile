@@ -41,6 +41,7 @@ RUN chmod 0500 /usr/sbin/kubectl
 
 # Add local files at the end of the Dockerfule to limit cache busting
 COPY scripts /work/bin
+COPY config /work/config
 COPY examples /work/examples
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
