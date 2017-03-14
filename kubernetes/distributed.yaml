@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: dask-scheduler
-          image: mdurant/docker-distributed:1
+          image: mdurant/docker-distributed:renew
           args: ["dask-scheduler"]
           ports:
           - name: rpc
@@ -51,7 +51,7 @@ spec:
     spec:
       containers:
         - name: dask-worker
-          image: mdurant/docker-distributed:1
+          image: mdurant/docker-distributed:renew
           args: ["dask-worker", "dask-scheduler:8786"]
           resources:
             requests:

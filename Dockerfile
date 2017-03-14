@@ -13,10 +13,11 @@ RUN mkdir -p /work/bin
 
 # Install Python 3 from miniconda
 ADD https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh miniconda.sh
-RUN bash miniconda.sh -b -p /opt/miniconda
+RUN bash miniconda.sh -b -p /work/miniconda
 RUN rm miniconda.sh
 
-ENV PATH="/work/bin:/opt/miniconda/bin:$PATH"
+# keep conda in user dir, so can do conda install in notebook
+ENV PATH="/work/bin:/work/miniconda/bin:$PATH"
 
 # Install pydata stack
 RUN conda config --set always_yes yes --set changeps1 no
@@ -25,6 +26,7 @@ RUN conda install notebook=4.2 ipywidgets psutil numpy scipy pandas bokeh scikit
 RUN conda install -c conda-forge fastparquet s3fs zict bcolz cytoolz dask distributed jupyter_dashboards
 RUN conda clean -tipsy
 RUN jupyter nbextension enable jupyter_dashboards --py --sys-prefix
+RUN pip install git+https://github.com/martindurant/gcsfs.git
 
 # Optional: Install the master branch of distributed and dask
 #RUN pip install git+https://github.com/dask/dask --upgrade --no-deps
