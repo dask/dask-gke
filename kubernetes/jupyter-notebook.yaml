@@ -23,8 +23,8 @@ spec:
               containerPort: 8888
           resources:
             requests:
-              cpu: 500m
-              memory: 200Mi
+              cpu: 1
+              memory: 4Gi
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 1000

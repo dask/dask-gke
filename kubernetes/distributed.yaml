@@ -29,8 +29,8 @@ spec:
             containerPort: 8787
           resources:
             requests: 
-              cpu: 500m
-              memory: 100Mi
+              cpu: 1
+              memory: 1024Mi
           imagePullPolicy: IfNotPresent
 ---
 apiVersion: v1
@@ -41,7 +41,7 @@ metadata:
     app: distributed
   name: dask-worker
 spec:
-  replicas: 2
+  replicas: 10
   selector:
     name: dask-worker
   template:
@@ -52,11 +52,12 @@ spec:
       containers:
         - name: dask-worker
           image: mdurant/docker-distributed:renew
-          args: ["dask-worker", "dask-scheduler:8786"]
+          args: ["dask-worker", "dask-scheduler:8786", "--nthreads", "2",
+                 "--memory-limit", "6442450944"]
           resources:
             requests:
-              cpu: 200m
-              memory: 100Mi
+              cpu: 1.8
+              memory: 6Gi
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 1000
