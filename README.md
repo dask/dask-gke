@@ -1,4 +1,4 @@
-# Kubernetes provisioning of Python Distributed compute cluster
+# Kubernetes provisioning of a Dask Distributed cluster
 
 This repo hosts some sample configuration to set up  kubernetes containerized
 environments for interactive cluster computing in Python with [Jupyter
