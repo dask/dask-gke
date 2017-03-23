@@ -50,19 +50,3 @@ spec:
       name: dask-scheduler-internal-bokeh
   selector:
     name: dask-scheduler
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: dask-worker-status
-  labels:
-    name: dask-worker-status
-    app: distributed
-spec:
-  type: LoadBalancer
-  ports:
-    - port: 8789
-      targetPort: 8789
-      name: dask-worker-internal-bokeh
-  selector:
-    name: dask-worker

@@ -95,6 +95,7 @@ When everything turns READY, check the IP of the notebok server
 
 NAME               CLUSTER-IP      EXTERNAL-IP    PORT(S)          AGE
 jupyter-notebook   10.51.252.116   99.99.99.99    8888:30651/TCP   1m
+dask-scheduler     10.51.252.117   99.99.99.98    8787:...
 ```
 
 For this output, you can access the UI by pointing a browser to 99.99.99.99:8888.
@@ -103,6 +104,14 @@ You can connect to the distributed scheduler by doing
 from dask.distributed import Client
 c = Client('dask-scheduler:8786')
 ```
+
+You can view the bokeh dashboards in a browser on 99.99.99.98:8787 and 99.99.99.97:8788 and
+you can connect to the scheduler from *outside* of the cluster by doing
+```python
+from dask.distributed import Client
+c = Client('99.99.99.98:8786')
+```
+
 
 When you are done, delete the cluster with
 
