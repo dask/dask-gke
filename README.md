@@ -2,7 +2,7 @@
 
 This repo hosts some sample configuration to set up  kubernetes containerized
 environments for interactive cluster computing in Python with [Jupyter
-notebook](http://jupyter.org/) [dask](http://dask.pydata.org/) distributed
+notebook](http://jupyter.org/) [dask](http://dask.pydata.org/) 
 and other tools from the PyData and SciPy
 ecosystems.
 
@@ -18,14 +18,14 @@ your-self](http://kubernetes.io/docs/getting-started-guides/).
 
 We will briefly describe usage assuming Google-countainer-engine
 
-## The docker-distributed image
+## The dask-kubernetes image
 
 The `Dockerfile` file in this repo can be used to build a docker image
 with all the necessary tools to run our cluster, in particular:
 
 - `conda` and `pip` to install additional tools and libraries,
 - `jupyter` for the notebook interface accessed from any web browser,
-- `dask` and `distributed`,
+- `dask` and its `distributed` scheduler,
 - `psutil` and `bokeh` (useful for the [cluster monitoring web interface](
    https://distributed.readthedocs.io/en/latest/web.html))
 - many convenient numerical libraries
@@ -36,8 +36,8 @@ This image will be used to run 3 types of services:
 - the `jupyter notebook` server, protected by password `acluster`. This password is defined
 in conf/jupyter_notebook_config.py; to change it, you will need to rebuild this image
 and point the kubernetes definitions to the new version.
-- the `distributed-scheduler` service,
-- one `distributed-worker` per container in the compute cluster.
+- the `dask-scheduler` service,
+- one `dask-worker` per container in the compute cluster.
 
 
 ### Setup with Google Container Engine
@@ -60,7 +60,7 @@ $ gcloud components update
 Make any changes you may require in 
 - scripts/make_cluster.sh, such as the number of
 nodes or [machine types](https://cloud.google.com/compute/docs/machine-types) and region
-- kubernetes/distributed.yaml, settings for the number of workers and their parameters. Note
+- kubernetes/dask.yaml, settings for the number of workers and their parameters. Note
 that if you allocate more resources than your cluster can handle, some pods will not start;
 even if you use auto-scaling, additional nodes are only launched when CPU usage on existing
 nodes rises.
@@ -73,7 +73,7 @@ When ready, launch with one command:
 This will take some time. Next, wait for the pods to come online. You can repeatedly
 run
 ```bash
-> kubectl get pods -l app=distributed
+> kubectl get pods -l app=dask
 ```
 
 and you will see something like
@@ -90,7 +90,7 @@ jupyter-notebook-z58dm   0/1       ContainerCreating   0          32s
 When everything turns READY, check the IP of the notebok server
 
 ```bash
-> kubectl get services -l app=distributed
+> kubectl get services -l app=dask
 
 
 NAME               CLUSTER-IP      EXTERNAL-IP    PORT(S)          AGE
@@ -117,7 +117,7 @@ When you are done, delete the cluster with
 
 
 ```
-$ gcloud container clusters delete distributed-1
+$ gcloud container clusters delete dask-1
 ```
 
 

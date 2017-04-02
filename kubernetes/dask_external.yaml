@@ -4,7 +4,7 @@ metadata:
   name: jupyter-notebook
   labels:
     name: jupyter-notebook
-    app: distributed
+    app: dask
 spec:
   type: LoadBalancer
   ports:
@@ -20,7 +20,7 @@ metadata:
   name: dask-scheduler
   labels:
     name: dask-scheduler
-    app: distributed
+    app: dask
 spec:
   ports:
     - port: 8786
@@ -38,7 +38,7 @@ metadata:
   name: dask-scheduler-status
   labels:
     name: dask-scheduler-status
-    app: distributed
+    app: dask
 spec:
   type: LoadBalancer
   ports:

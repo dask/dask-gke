@@ -3,7 +3,7 @@ kind: ReplicationController
 metadata:
   labels:
     name: jupyter-notebook
-    app: distributed
+    app: dask
   name: jupyter-notebook
 spec:
   replicas: 1
