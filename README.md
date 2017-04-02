@@ -60,7 +60,7 @@ $ gcloud components update
 Make any changes you may require in 
 - scripts/make_cluster.sh, such as the number of
 nodes or [machine types](https://cloud.google.com/compute/docs/machine-types) and region
-- kubernetes/dask.yaml, settings for the number of workers and their parameters. Note
+- kubernetes/*.yaml, settings for the number of workers and their parameters. Note
 that if you allocate more resources than your cluster can handle, some pods will not start;
 even if you use auto-scaling, additional nodes are only launched when CPU usage on existing
 nodes rises.
