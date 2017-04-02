@@ -42,11 +42,12 @@ and point the kubernetes definitions to the new version.
 
 ### Setup with Google Container Engine
 
-You will need to install
-- [gcloud](https://cloud.google.com/sdk/gcloud/) for authentication and launching 
-clusters
+You will need to install the following:
+
+- [gcloud](https://cloud.google.com/sdk/gcloud/) for authentication and
+  launching clusters
 - [kubectl](https://kubernetes.io/docs/tasks/kubectl/install/) for interacting
-with the kubernetes driver.
+  with the kubernetes driver.
 
 Register on the [Google Cloud Platform](https://cloud.google.com/), setup a
 billing account and create a project with the Google Compute Engine API enabled.
@@ -57,23 +58,26 @@ Ensure that your client SDK is up to date:
 $ gcloud components update
 ```
 
-Make any changes you may require in 
-- scripts/make_cluster.sh, such as the number of
-nodes or [machine types](https://cloud.google.com/compute/docs/machine-types) and region
-- kubernetes/distributed.yaml, settings for the number of workers and their parameters. Note
-that if you allocate more resources than your cluster can handle, some pods will not start;
-even if you use auto-scaling, additional nodes are only launched when CPU usage on existing
-nodes rises.
+Make any changes you may require in
+
+- scripts/make_cluster.sh, such as the number of nodes or
+  [machine types](https://cloud.google.com/compute/docs/machine-types) and region
+- kubernetes/distributed.yaml, settings for the number of workers and their
+  parameters. Note that if you allocate more resources than your cluster can
+  handle, some pods will not start; even if you use auto-scaling, additional
+  nodes are only launched when CPU usage on existing nodes rises.
 
 When ready, launch with one command:
+
 ```bash
-> source scripts/make_cluster.sh
+source scripts/make_cluster.sh
 ```
 
-This will take some time. Next, wait for the pods to come online. You can repeatedly
-run
+This will take some time. Next, wait for the pods to come online. You can
+repeatedly run the following:
+
 ```bash
-> kubectl get pods -l app=distributed
+kubectl get pods -l app=distributed
 ```
 
 and you will see something like
@@ -90,7 +94,7 @@ jupyter-notebook-z58dm   0/1       ContainerCreating   0          32s
 When everything turns READY, check the IP of the notebok server
 
 ```bash
-> kubectl get services -l app=distributed
+kubectl get services -l app=distributed
 
 
 NAME               CLUSTER-IP      EXTERNAL-IP    PORT(S)          AGE
@@ -98,28 +102,29 @@ jupyter-notebook   10.51.252.116   99.99.99.99    8888:30651/TCP   1m
 dask-scheduler     10.51.252.117   99.99.99.98    8787:...
 ```
 
-For this output, you can access the UI by pointing a browser to 99.99.99.99:8888.
-You can connect to the distributed scheduler by doing
+For this output, you can access the UI by pointing a browser to
+99.99.99.99:8888.  You can connect to the distributed scheduler by doing the
+following:
+
 ```python
 from dask.distributed import Client
 c = Client('dask-scheduler:8786')
 ```
 
-You can view the bokeh dashboards in a browser on 99.99.99.98:8787 and 99.99.99.97:8788 and
-you can connect to the scheduler from *outside* of the cluster by doing
+You can view the bokeh dashboards in a browser on 99.99.99.98:8787 and
+99.99.99.97:8788 and you can connect to the scheduler from *outside* of the
+cluster by doing
+
 ```python
 from dask.distributed import Client
 c = Client('99.99.99.98:8786')
 ```
 
-
-When you are done, delete the cluster with
-
+When you are done, delete the cluster with the following:
 
 ```
 $ gcloud container clusters delete distributed-1
 ```
-
 
 
 ## Extras
