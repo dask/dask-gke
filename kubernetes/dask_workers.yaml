@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dask-worker
-          image: mdurant/docker-distributed:renew
+          image: mdurant/dask-kubernetes:latest
           args: ["dask-worker", "dask-scheduler:8786", "--nthreads", "2",
                  "--memory-limit", "6442450944"]
           resources:

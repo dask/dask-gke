@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dask-scheduler
-          image: mdurant/docker-distributed:renew
+          image: mdurant/dask-kubernetes:latest
           args: ["dask-scheduler"]
           ports:
           - name: rpc
