@@ -3,7 +3,7 @@ kind: ReplicationController
 metadata:
   labels:
     name: dask-scheduler
-    app: distributed
+    app: dask
   name: dask-scheduler
 spec:
   replicas: 1
@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         name: dask-scheduler
+        app: dask
     spec:
       containers:
         - name: dask-scheduler
@@ -38,7 +39,7 @@ kind: ReplicationController
 metadata:
   labels:
     name: dask-worker
-    app: distributed
+    app: dask
   name: dask-worker
 spec:
   replicas: 10
@@ -48,6 +49,7 @@ spec:
     metadata:
       labels:
         name: dask-worker
+        app: dask
     spec:
       containers:
         - name: dask-worker
