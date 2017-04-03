@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         name: jupyter-notebook
+        app: dask
     spec:
       containers:
         - name: jupyter-notebook
