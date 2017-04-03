@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         name: dask-scheduler
+        app: dask
     spec:
       containers:
         - name: dask-scheduler
@@ -48,6 +49,7 @@ spec:
     metadata:
       labels:
         name: dask-worker
+        app: dask
     spec:
       containers:
         - name: dask-worker
