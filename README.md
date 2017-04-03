@@ -33,7 +33,7 @@ with all the necessary tools to run our cluster, in particular:
 
 This image will be used to run 3 types of services:
 
-- the `jupyter notebook` server, protected by password `acluster`. This password is defined
+- the `jupyter notebook` server, protected by password `jupyter`. This password is defined
 in conf/jupyter_notebook_config.py; to change it, you will need to rebuild this image
 and point the kubernetes definitions to the new version.
 - the `dask-scheduler` service,

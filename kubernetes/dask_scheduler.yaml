@@ -33,34 +33,3 @@ spec:
               cpu: 1
               memory: 1024Mi
           imagePullPolicy: IfNotPresent
----
-apiVersion: v1
-kind: ReplicationController
-metadata:
-  labels:
-    name: dask-worker
-    app: dask
-  name: dask-worker
-spec:
-  replicas: 10
-  selector:
-    name: dask-worker
-  template:
-    metadata:
-      labels:
-        name: dask-worker
-        app: dask
-    spec:
-      containers:
-        - name: dask-worker
-          image: mdurant/docker-distributed:renew
-          args: ["dask-worker", "dask-scheduler:8786", "--nthreads", "2",
-                 "--memory-limit", "6442450944"]
-          resources:
-            requests:
-              cpu: 1.8
-              memory: 6Gi
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsUser: 1000
-          workingDir: /work
