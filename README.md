@@ -63,9 +63,7 @@ Make any changes you may require in
 - scripts/make_cluster.sh, such as the number of nodes or
   [machine types](https://cloud.google.com/compute/docs/machine-types) and region
 - kubernetes/dask_processes.yaml, settings for the number of workers and their
-  parameters. Note that if you allocate more resources than your cluster can
-  handle, some pods will not start; even if you use auto-scaling, additional
-  nodes are only launched when CPU usage on existing nodes rises.
+  parameters.
 
 When ready, launch with one command:
 
@@ -122,12 +120,43 @@ c = Client('99.99.99.98:8786')
 
 When you are done, delete the cluster with the following:
 
-```
-$ gcloud container clusters delete dask-1
+```bash
+gcloud container clusters delete dask-1
 ```
 
 
 ## Extras
+
+### Resize cluster
+
+The dask workers live within containers on Google virtual machines. To get more processing
+power and memory, you must both increase the number of machines and the number of containers.
+
+To add machines to the cluster, you may do the following
+
+```bash
+gcloud container clusters resize dask-1 --size=15 --async
+```
+
+(of course, the more machines, the higher the bill will be)
+
+To add worker containers, you may do the following
+
+```bash
+kubectl scale rc dask-worker --replicas=COUNT
+```
+
+Querying the pods again will tell you whether the selected number of worker containers
+can actually fit into the available machines.
+
+Note that if you allocate more resources than your cluster can
+handle, some pods will not start; even if you use auto-scaling, additional
+nodes are only launched when CPU usage on existing nodes rises.
+To enable auto-scaling, add the following flags to the gloud container create line in
+``make_cluster.sh``: ``--enable-autoscaling --min-nodes=6 --max-nodes=16``
+
+
+### Logs
 
 we can get the logs of a specific pod with `kubectl logs`:
 
@@ -152,6 +181,8 @@ distributed.scheduler - INFO - Register 10.112.1.4:54760
 distributed.scheduler - INFO - Starting worker compute stream, 10.112.1.4:54760
 ```
 
+### Run commands
+
 we can also execute arbitrary commands inside the running containers with
 `kubectl exec`, for instance to open an interactive shell session for debugging
 purposes:
@@ -164,3 +195,28 @@ total 56
 -rw-r--r-- 1 basicuser root 33712 May 17 11:29 sklearn_parameter_search.ipynb
 -rw-r--r-- 1 basicuser root 14407 May 17 11:29 sklearn_parameter_search_joblib.ipynb
 ```
+
+### Alternate docker image
+
+Each type of pod in dask-kubernetes currently is founded on the docker image 
+``mdurant/dask-kubernetes:latest``. The Dockerfile is included in this repo. Users
+may wish to alter particularly the conda/pip installations in the middle of the work-flow.
+
+There are two ways to apply changes made to a dask cluster:
+- rebuild the docker image to the new specification, and post on dockerhub, changing
+  the ``image:`` keys in the kubernetes .yaml files to point to it;
+- set up a google image registry and build new images within your compute cluster.
+
+To create a new password for the jupyter interface, execute the following in locally,
+using a jupyter of similar version to the Dockerfile (currently 4.2)
+
+```python
+In [1]: from notebook.auth import passwd
+In [2]: passwd()
+Enter password:
+Verify password:
+Out[2]: '...'
+```
+
+and place the created output string into ``config/jupyter_notebook_config.py`` before
+rebuildign the docker image.
