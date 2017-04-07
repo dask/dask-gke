@@ -1,6 +1,6 @@
 # Kubernetes provisioning of a Dask Distributed cluster
 
-This repo hosts some sample configuration to set up  kubernetes containerized
+This repo hosts some sample configuration to set up Kubernetes containerized
 environments for interactive cluster computing in Python with [Jupyter
 notebook](http://jupyter.org/) [dask](http://dask.pydata.org/) 
 and other tools from the PyData and SciPy
@@ -16,7 +16,7 @@ The Kubernetes API is provided as a hosted service by:
 Alternatively it is possible to [install and manage Kubernetes by
 your-self](http://kubernetes.io/docs/getting-started-guides/).
 
-We will briefly describe usage assuming Google-countainer-engine
+We will briefly describe usage assuming Google Container Engine (GCE)
 
 ## The dask-kubernetes image
 
@@ -89,7 +89,7 @@ dask-worker-2dpr1        0/1       ContainerCreating   0          32s
 jupyter-notebook-z58dm   0/1       ContainerCreating   0          32s
 ```
 
-When everything turns READY, check the IP of the notebok server
+When everything turns `Running`, check the IP of the notebook server
 
 ```bash
 > kubectl get services -l app=dask
