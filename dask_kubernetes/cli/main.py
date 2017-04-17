@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import logging
-import sys
 
 from .. import __version__
 from .config import setup_logging
@@ -23,7 +22,7 @@ def start():
     except KeyboardInterrupt:
         click.echo("Interrupted by Ctrl-C.")
         sys.exit(1)
-    except Exception as e:
+    except Exception:
         click.echo(traceback.format_exc(), err=True)
         sys.exit(1)
 
