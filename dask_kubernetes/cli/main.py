@@ -48,17 +48,12 @@ def cli(ctx):
               default=6,
               show_default=True,
               required=False,
-              help="The number of nodes to be created in each of the cluster's zones.")
+              help="The number of nodes to be created in the cluster.")
 @click.option("--disk-size",
               default=50,
               show_default=True,
               required=False,
               help="Size in GB for node VM boot disks.")
-@click.option("--machine-type", "-m",
-              default="n1-standard-4",
-              show_default=True,
-              required=False,
-              help="The type of machine to use for nodes.")
 @click.option("--machine-type", "-m",
               default="n1-standard-4",
               show_default=True,
