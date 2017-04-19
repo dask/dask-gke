@@ -232,3 +232,7 @@ Out[2]: '...'
 
 and place the created output string into ``config/jupyter_notebook_config.py`` before
 rebuildign the docker image.
+
+### History
+
+The original work was completed by @ogrisel.

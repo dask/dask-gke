@@ -11,7 +11,7 @@ setup(name="dask-kubernetes",
       version="0.0.1",
       description="Dask Kubernetes",
       url="https://github.com/martindurant/dask-kubernetes",
-      author="Joseph Crail",
+      author="Martin Durant",
       keywords='kubernetes',
       classifiers=[
           'Development Status :: 4 - Beta',
