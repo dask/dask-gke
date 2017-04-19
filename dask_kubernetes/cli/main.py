@@ -4,7 +4,7 @@ import logging
 
 from .. import __version__
 from .config import setup_logging
-from .utils import call, required_commands
+from .utils import call, check_output, required_commands
 
 import click
 
@@ -76,12 +76,39 @@ def create(ctx, name, num_nodes, machine_type, disk_size, zone, filename):
     call("kubectl create -f {0}".format(filename))
 
 
-@cli.command(short_help="Resize a cluster.")
+@cli.group('resize', short_help="Resize a cluster.")
+def resize():
+    pass
+
+
+@resize.command("nodes", short_help="Resize the number of nodes in a cluster.")
 @click.pass_context
-@click.argument('name', required=True)
-@click.argument('size', required=True)
-def resize(ctx, name, size):
-    call("gcloud container clusters resize {0} --size {1} --async".format(name, size))
+@click.argument('cluster', required=True)
+@click.argument('value', required=True)
+def nodes(ctx, cluster, value):
+    call("gcloud container clusters resize {0} --size {1} --async".format(cluster, value))
+
+
+def get_context_from_cluster(cluster):
+    """
+    Returns context for a cluster.
+    """
+    output = check_output("kubectl config get-contexts -o name")
+    contexts = output.strip().split('\n')
+    for context in contexts:
+        # Each context uses the format: gke_{PROJECT}_{ZONE}_{CLUSTER}
+        if context.split('_')[-1] == cluster:
+            return context
+    return None
+
+
+@resize.command("pods", short_help="Resize the number of pods in a cluster.")
+@click.pass_context
+@click.argument('cluster', required=True)
+@click.argument('value', required=True)
+def pods(ctx, cluster, value):
+    context = get_context_from_cluster(cluster)
+    call("kubectl --context {0} scale rc dask-worker --replicas {1}".format(context, value))
 
 
 @cli.command(short_help="Show all clusters.")

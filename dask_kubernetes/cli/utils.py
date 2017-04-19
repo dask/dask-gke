@@ -30,3 +30,8 @@ def required_commands(*commands):
 def call(cmd):
     click.secho("executing: {}".format(cmd), fg='green')
     subprocess.call(cmd, shell=True)
+
+
+def check_output(cmd):
+    click.secho("executing: {}".format(cmd), fg='green')
+    return subprocess.check_output(cmd, shell=True).decode("utf-8")
