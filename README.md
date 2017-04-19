@@ -147,7 +147,7 @@ power and memory, you must both increase the number of machines and the number o
 To add machines to the cluster, you may do the following
 
 ```bash
-dask-kubernetes resize NAME 15
+dask-kubernetes resize nodes CLUSTER COUNT
 ```
 
 (of course, the more machines, the higher the bill will be)
@@ -155,7 +155,7 @@ dask-kubernetes resize NAME 15
 To add worker containers, you may do the following
 
 ```bash
-kubectl scale rc dask-worker --replicas=COUNT
+dask-kubernetes resize pods CLUSTER COUNT
 ```
 
 Querying the pods again will tell you whether the selected number of worker containers
