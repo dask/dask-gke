@@ -7,16 +7,8 @@ from setuptools import find_packages, setup
 with open('README.md', encoding='utf-8') as f:
     readme = f.read()
 
-# Version extraction inspired from 'requests'
-with open('dask_kubernetes/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
-
-if not version:
-    raise RuntimeError('Cannot find version information')
-
 setup(name="dask-kubernetes",
-      version=version,
+      version="0.0.1",
       description="Dask Kubernetes",
       url="https://github.com/martindurant/dask-kubernetes",
       author="Joseph Crail",
