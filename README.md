@@ -58,17 +58,29 @@ Ensure that your client SDK is up to date:
 $ gcloud components update
 ```
 
+Install `dask-kubernetes` CLI via:
+
+```
+$ python setup.py install
+```
+
 Make any changes you may require in
 
-- scripts/make_cluster.sh, such as the number of nodes or
-  [machine types](https://cloud.google.com/compute/docs/machine-types) and region
 - kubernetes/dask_processes.yaml, settings for the number of workers and their
   parameters.
 
-When ready, launch with one command:
+When ready, launch with one command (assumes `NAME` is substituted with your
+cluster name and the command is invoked from the repository's root directory):
 
 ```bash
-source scripts/make_cluster.sh
+dask-kubernetes create NAME
+```
+
+You may also modify the default number of nodes or cluster region. See the help
+documentation for specific settings:
+
+```
+dask-kubernetes create --help
 ```
 
 This will take some time. Next, wait for the pods to come online. You can
@@ -121,7 +133,7 @@ c = Client('99.99.99.98:8786')
 When you are done, delete the cluster with the following:
 
 ```bash
-gcloud container clusters delete dask-1
+dask-kubernetes delete NAME
 ```
 
 
@@ -135,7 +147,7 @@ power and memory, you must both increase the number of machines and the number o
 To add machines to the cluster, you may do the following
 
 ```bash
-gcloud container clusters resize dask-1 --size=15 --async
+dask-kubernetes resize nodes CLUSTER COUNT
 ```
 
 (of course, the more machines, the higher the bill will be)
@@ -143,7 +155,7 @@ gcloud container clusters resize dask-1 --size=15 --async
 To add worker containers, you may do the following
 
 ```bash
-kubectl scale rc dask-worker --replicas=COUNT
+dask-kubernetes resize pods CLUSTER COUNT
 ```
 
 Querying the pods again will tell you whether the selected number of worker containers
@@ -220,3 +232,7 @@ Out[2]: '...'
 
 and place the created output string into ``config/jupyter_notebook_config.py`` before
 rebuildign the docker image.
+
+### History
+
+The original work was completed by @ogrisel.
