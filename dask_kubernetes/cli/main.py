@@ -2,7 +2,6 @@
 
 import logging
 
-from .. import __version__
 from .config import setup_logging
 from .utils import call, check_output, required_commands
 
@@ -31,7 +30,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.version_option(prog_name="dask-kubernetes", version=__version__)
+@click.version_option(prog_name="dask-kubernetes", version="0.0.1")
 @click.pass_context
 @required_commands("gcloud", "kubectl")
 def cli(ctx):
