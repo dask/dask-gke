@@ -4,7 +4,9 @@ import click
 import logging
 import os
 import subprocess
+import sys
 import time
+import traceback
 import webbrowser
 
 from .config import setup_logging
@@ -17,10 +19,6 @@ filename = os.path.abspath(os.path.join(os.path.dirname(__file__),
 
 
 def start():
-    import sys
-    import logging
-    import traceback
-
     try:
         setup_logging(logging.DEBUG)
         cli(obj={})

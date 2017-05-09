@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 MAINTAINER Martin Durant <martin.durant@utoronto.ca>
 
-RUN apt-get update -yqq && apt-get install -yqq bzip2 git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -yqq && apt-get install -yqq bzip2 git graphviz && rm -rf /var/lib/apt/lists/*
 
 # Configure environment
 ENV LC_ALL=C.UTF-8
@@ -24,7 +24,8 @@ RUN conda install -c conda-forge fastparquet s3fs zict bcolz blosc cytoolz dask 
  && conda clean -tipsy \
  && jupyter nbextension enable jupyter_dashboards --py --sys-prefix \
  && pip install git+https://github.com/martindurant/gcsfs.git \
- && pip install git+https://github.com/dask/dask-glm.git
+ && pip install git+https://github.com/dask/dask-glm.git \
+ && pip install graphviz
 
 # Optional: Install the master branch of distributed and dask
 #RUN pip install git+https://github.com/dask/dask --upgrade --no-deps
