@@ -6,7 +6,7 @@ metadata:
     app: dask
   name: dask-worker
 spec:
-  replicas: 10
+  replicas: 8
   selector:
     name: dask-worker
   template:

@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 
+import click
 import logging
+import os
+import subprocess
+import time
+import webbrowser
 
 from .config import setup_logging
 from .utils import call, check_output, required_commands
 
-import click
 
 logger = logging.getLogger(__name__)
+filename = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                        '../kubernetes'))
 
 
 def start():
@@ -63,15 +69,13 @@ def cli(ctx):
               show_default=True,
               required=False,
               help="The compute zone for the cluster.")
-@click.option("--filename", "-f",
-              default="kubernetes",
-              show_default=True,
-              required=False,
-              help="Filename, directory, or URL to files to use to create the resource")
-def create(ctx, name, num_nodes, machine_type, disk_size, zone, filename):
+def create(ctx, name, num_nodes, machine_type, disk_size, zone):
     call("gcloud config set compute/zone {0}".format(zone))
-    call("gcloud container clusters create {0} --num-nodes {1} --machine-type {2} --no-async --disk-size {3} --tags=dask,anacondascale".format(name, num_nodes, machine_type, disk_size))
+    call("gcloud container clusters create {0} --num-nodes {1} --machine-type"
+         " {2} --no-async --disk-size {3} --tags=dask,anacondascale".format(
+            name, num_nodes, machine_type, disk_size))
     call("gcloud container clusters get-credentials {0}".format(name))
+    print(filename)
     call("kubectl create -f {0}".format(filename))
 
 
@@ -85,7 +89,8 @@ def resize():
 @click.argument('cluster', required=True)
 @click.argument('value', required=True)
 def nodes(ctx, cluster, value):
-    call("gcloud container clusters resize {0} --size {1} --async".format(cluster, value))
+    call("gcloud container clusters resize {0} --size {1} --async".format(
+        cluster, value))
 
 
 def get_context_from_cluster(cluster):
@@ -107,7 +112,8 @@ def get_context_from_cluster(cluster):
 @click.argument('value', required=True)
 def pods(ctx, cluster, value):
     context = get_context_from_cluster(cluster)
-    call("kubectl --context {0} scale rc dask-worker --replicas {1}".format(context, value))
+    call("kubectl --context {0} scale rc dask-worker --replicas {1}".format(
+        context, value))
 
 
 @cli.command(short_help="Show all clusters.")
@@ -131,21 +137,25 @@ from dask.distributed import Client
 c = Client('dask-scheduler:8786')
 """
     context = get_context_from_cluster(cluster)
+    jupyter, scheduler = services_in_context(context)
+    print(template.format(jupyter=jupyter, scheduler=scheduler))
+
+
+def services_in_context(context):
     out = check_output("kubectl --context {0} get services".format(context))
     for line in out.split('\n'):
         words = line.split()
         if words and words[0] == 'jupyter-notebook':
-            jupyter = words[1]
+            jupyter = words[2]
         if words and words[0] == 'dask-scheduler-status':
-            scheduler = words[1]
-    print(template.format(jupyter=jupyter, scheduler=scheduler))
+            scheduler = words[2]
+    return jupyter, scheduler
 
 
 @cli.command(short_help='Open the remote kubernetes console in the browser')
 @click.pass_context
 @click.argument('cluster', required=True)
 def dashboard(ctx, cluster):
-    import webbrowser, subprocess, time
     context = get_context_from_cluster(cluster)
     try:
         P = subprocess.Popen('kubectl --context {0} proxy'.format(
@@ -156,6 +166,15 @@ def dashboard(ctx, cluster):
             time.sleep(100)
     finally:
         P.terminate()
+
+
+@cli.command(short_help='Open the remote jupyter notebook in the browser')
+@click.pass_context
+@click.argument('cluster', required=True)
+def notebook(ctx, cluster):
+    context = get_context_from_cluster(cluster)
+    jupyter, scheduler = services_in_context(context)
+    webbrowser.open('http://{}:8888'.format(jupyter))
 
 
 @cli.command(short_help="Delete a cluster.")
