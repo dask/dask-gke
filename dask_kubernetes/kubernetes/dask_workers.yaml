@@ -24,7 +24,7 @@ spec:
             requests:
               cpu: 1.8
               memory: 6Gi
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             runAsUser: 1000
           workingDir: /work

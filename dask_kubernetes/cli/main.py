@@ -2,7 +2,9 @@
 
 import click
 import logging
+from math import ceil
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -112,6 +114,22 @@ def nodes(ctx, cluster, value):
         cluster, value))
 
 
+@resize.command("both",
+                short_help="Resize the number of pods in a cluster,"
+                           " and resize number of nodes proportionately")
+@click.pass_context
+@click.argument('cluster', required=True)
+@click.argument('value', required=True)
+def both(ctx, cluster, value):
+    value = int(value)
+    context = get_context_from_cluster(cluster)
+    n, p = counts(cluster)
+    call("gcloud container clusters resize {0} --size {1} --async".format(
+        cluster, ceil(n * value/p)))
+    call("kubectl --context {0} scale rc dask-worker --replicas {1}".format(
+        context, value))
+
+
 def get_context_from_cluster(cluster):
     """
     Returns context for a cluster.
@@ -171,6 +189,17 @@ def services_in_context(context):
         if words and words[0] == 'dask-scheduler-status':
             scheduler = words[2]
     return jupyter, scheduler
+
+
+def counts(cluster):
+    context = get_context_from_cluster(cluster)
+    out = check_output('gcloud container clusters describe {}'.format(cluster))
+    nodes = int(re.search('currentNodeCount: (\d+)', out).groups()[0])
+    out = check_output(
+        'kubectl --context {} get rc dask-worker'.format(context))
+    lines = [o for o in out.split('\n') if o.startswith('dask-worker')]
+    pods = int(lines[0].split()[1])
+    return nodes, pods
 
 
 @cli.command(short_help='Open the remote kubernetes console in the browser')
