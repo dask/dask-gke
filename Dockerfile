@@ -39,7 +39,6 @@ ADD https://storage.googleapis.com/kubernetes-release/release/v1.5.4/bin/linux/a
 RUN chmod +x /usr/bin/tini && chmod 0500 /usr/sbin/kubectl
 
 # Add local files at the end of the Dockerfule to limit cache busting
-COPY scripts /work/bin
 COPY config /work/config
 COPY examples /work/examples
 ENTRYPOINT ["/usr/bin/tini", "--"]

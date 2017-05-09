@@ -116,6 +116,48 @@ def list(ctx):
     call("gcloud container clusters list")
 
 
+@cli.command(short_help='Detailed info about your running  dask cluster')
+@click.pass_context
+@click.argument('cluster', required=True)
+def info(ctx, cluster):
+    template = """Addresses
+---------
+   Web Interface:  http://{scheduler}:8787/status
+Jupyter Notebook:  http://{jupyter}:8888
+
+To connect to scheduler inside of cluster
+-----------------------------------------
+from dask.distributed import Client
+c = Client('dask-scheduler:8786')
+"""
+    context = get_context_from_cluster(cluster)
+    out = check_output("kubectl --context {0} get services".format(context))
+    for line in out.split('\n'):
+        words = line.split()
+        if words and words[0] == 'jupyter-notebook':
+            jupyter = words[1]
+        if words and words[0] == 'dask-scheduler-status':
+            scheduler = words[1]
+    print(template.format(jupyter=jupyter, scheduler=scheduler))
+
+
+@cli.command(short_help='Open the remote kubernetes console in the browser')
+@click.pass_context
+@click.argument('cluster', required=True)
+def dashboard(ctx, cluster):
+    import webbrowser, subprocess, time
+    context = get_context_from_cluster(cluster)
+    try:
+        P = subprocess.Popen('kubectl --context {0} proxy'.format(
+            context).split())
+        webbrowser.open('http://localhost:8001/ui')
+        print('\nProxy running - press ^C to exit')
+        while True:
+            time.sleep(100)
+    finally:
+        P.terminate()
+
+
 @cli.command(short_help="Delete a cluster.")
 @click.pass_context
 @click.argument('name', required=True)
