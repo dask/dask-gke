@@ -3,6 +3,7 @@
 import click
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -73,8 +74,28 @@ def create(ctx, name, num_nodes, machine_type, disk_size, zone):
          " {2} --no-async --disk-size {3} --tags=dask,anacondascale".format(
             name, num_nodes, machine_type, disk_size))
     call("gcloud container clusters get-credentials {0}".format(name))
-    print(filename)
-    call("kubectl create -f {0}".format(filename))
+    par = pardir(name)
+    shutil.rmtree(par, True)
+    print("Copying template config to ", par)
+    os.makedirs(par, exist_ok=True)  # not PY2 ?
+    for f in os.listdir(filename):
+        fn = os.path.join(filename, f)
+        shutil.copy(fn, par)
+    call("kubectl create -f {0}  --save-config".format(par))
+
+
+@cli.command(short_help='Update config from parameter files')
+@click.pass_context
+@click.argument('cluster', required=True)
+def update_config(ctx, cluster):
+    context = get_context_from_cluster(cluster)
+    par = pardir(cluster)
+    call("kubectl --context {} apply -f {}".format(context, par))
+
+
+def pardir(cluster):
+    return os.sep.join([os.path.expanduser('~'), '.dask', 'kubernetes',
+                        cluster])
 
 
 @cli.group('resize', short_help="Resize a cluster.")
@@ -128,6 +149,7 @@ def info(ctx, cluster):
 ---------
    Web Interface:  http://{scheduler}:8787/status
 Jupyter Notebook:  http://{jupyter}:8888
+ Config direcoty:  {par}
 
 To connect to scheduler inside of cluster
 -----------------------------------------
@@ -136,7 +158,8 @@ c = Client('dask-scheduler:8786')
 """
     context = get_context_from_cluster(cluster)
     jupyter, scheduler = services_in_context(context)
-    print(template.format(jupyter=jupyter, scheduler=scheduler))
+    par = pardir(cluster)
+    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par))
 
 
 def services_in_context(context):
