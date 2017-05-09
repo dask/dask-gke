@@ -167,17 +167,23 @@ def info(ctx, cluster):
 ---------
    Web Interface:  http://{scheduler}:8787/status
 Jupyter Notebook:  http://{jupyter}:8888
+Worker Interface:  http://{worker}:8789
  Config direcoty:  {par}
 
 To connect to scheduler inside of cluster
 -----------------------------------------
 from dask.distributed import Client
 c = Client('dask-scheduler:8786')
+
+or from outside the cluster
+
+c = Client('{scheduler}:8786')
 """
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
+    jupyter, scheduler, worker = services_in_context(context)
     par = pardir(cluster)
-    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par))
+    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par,
+                          worker=worker))
 
 
 def services_in_context(context):
@@ -186,9 +192,11 @@ def services_in_context(context):
         words = line.split()
         if words and words[0] == 'jupyter-notebook':
             jupyter = words[2]
-        if words and words[0] == 'dask-scheduler-status':
+        if words and words[0] == 'dask-scheduler':
             scheduler = words[2]
-    return jupyter, scheduler
+        if words and words[0] == 'dask-worker':
+            worker = words[2]
+    return jupyter, scheduler, worker
 
 
 def counts(cluster):
@@ -223,7 +231,7 @@ def dashboard(ctx, cluster):
 @click.argument('cluster', required=True)
 def notebook(ctx, cluster):
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
+    jupyter, scheduler, worker = services_in_context(context)
     webbrowser.open('http://{}:8888'.format(jupyter))
 
 
