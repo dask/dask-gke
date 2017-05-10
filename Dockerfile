@@ -25,7 +25,8 @@ RUN conda install -c conda-forge fastparquet s3fs zict bcolz blosc cytoolz dask 
  && jupyter nbextension enable jupyter_dashboards --py --sys-prefix \
  && pip install git+https://github.com/martindurant/gcsfs.git \
  && pip install git+https://github.com/dask/dask-glm.git \
- && pip install graphviz
+ && pip install graphviz \
+ && conda install tornado=4.4
 
 # Optional: Install the master branch of distributed and dask
 #RUN pip install git+https://github.com/dask/dask --upgrade --no-deps
