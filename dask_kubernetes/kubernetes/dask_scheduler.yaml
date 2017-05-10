@@ -32,4 +32,4 @@ spec:
             requests: 
               cpu: 1
               memory: 1024Mi
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always

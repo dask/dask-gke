@@ -6,7 +6,7 @@ metadata:
     app: dask
   name: dask-worker
 spec:
-  replicas: 10
+  replicas: 8
   selector:
     name: dask-worker
   template:
@@ -24,7 +24,7 @@ spec:
             requests:
               cpu: 1.8
               memory: 6Gi
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             runAsUser: 1000
           workingDir: /work

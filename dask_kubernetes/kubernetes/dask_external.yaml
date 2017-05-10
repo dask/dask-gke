@@ -22,6 +22,7 @@ metadata:
     name: dask-scheduler
     app: dask
 spec:
+  type: LoadBalancer
   ports:
     - port: 8786
       targetPort: 8786
@@ -29,24 +30,24 @@ spec:
     - port: 9786
       targetPort: 9786
       name: dask-scheduler-http
+    - port: 8787
+      targetPort: 8787
+      name: dask-scheduler-bokeh
   selector:
     name: dask-scheduler
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: dask-scheduler-status
+  name: dask-worker
   labels:
-    name: dask-scheduler-status
+    name: dask-worker
     app: dask
 spec:
   type: LoadBalancer
   ports:
-    - port: 8787
-      targetPort: 8787
-      name: dask-scheduler-external-bokeh
-    - port: 8788
-      targetPort: 8788
-      name: dask-scheduler-internal-bokeh
+    - port: 8789
+      targetPort: 8789
+      name: dask-worker
   selector:
-    name: dask-scheduler
+    name: dask-worker

@@ -164,7 +164,7 @@ can actually fit into the available machines.
 Note that if you allocate more resources than your cluster can
 handle, some pods will not start; even if you use auto-scaling, additional
 nodes are only launched when CPU usage on existing nodes rises.
-To enable auto-scaling, add the following flags to the gloud container create line in
+To enable auto-scaling, add the following flags to the gcloud container create line in
 ``make_cluster.sh``: ``--enable-autoscaling --min-nodes=6 --max-nodes=16``
 
 
