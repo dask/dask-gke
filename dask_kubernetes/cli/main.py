@@ -50,7 +50,7 @@ def cli(ctx):
 @cli.command(short_help="Create a cluster.")
 @click.pass_context
 @click.argument('name', required=True)
-@click.option("--num-nodes",
+@click.option("--num-nodes", "-n",
               default=6,
               show_default=True,
               required=False,
@@ -72,10 +72,16 @@ def cli(ctx):
               help="The compute zone for the cluster.")
 def create(ctx, name, num_nodes, machine_type, disk_size, zone):
     call("gcloud config set compute/zone {0}".format(zone))
+    call("gcloud config set compute/region {0}".format(zone.rsplit('-', 1)[0]))
     call("gcloud container clusters create {0} --num-nodes {1} --machine-type"
-         " {2} --no-async --disk-size {3} --tags=dask,anacondascale".format(
+         " {2} --no-async --disk-size {3} --tags=dask --scopes "
+         "https://www.googleapis.com/auth/cloud-platform".format(
             name, num_nodes, machine_type, disk_size))
-    call("gcloud container clusters get-credentials {0}".format(name))
+    try:
+        subprocess.check_call("gcloud container clusters get-credentials {0}".
+                              format(name), shell=True)
+    except:
+        raise RuntimeError('Cluster creation failed!')
     par = pardir(name)
     shutil.rmtree(par, True)
     print("Copying template config to ", par)
