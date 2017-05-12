@@ -19,11 +19,11 @@ spec:
         - name: dask-worker
           image: mdurant/dask-kubernetes:latest
           args: ["dask-worker", "dask-scheduler:8786", "--nthreads", "2",
-                 "--memory-limit", "6442450944"]
+                 "--memory-limit", "6442450944", "--interface",  "eth0"]
           resources:
             requests:
               cpu: 1.8
-              memory: 6Gi
+              memory: 6800Mi
           imagePullPolicy: Always
           securityContext:
             runAsUser: 1000
