@@ -173,8 +173,7 @@ def info(ctx, cluster):
 ---------
    Web Interface:  http://{scheduler}:8787/status
 Jupyter Notebook:  http://{jupyter}:8888
-Worker Interface:  http://{worker}:8789
- Config direcoty:  {par}
+Config directory:  {par}
 
 To connect to scheduler inside of cluster
 -----------------------------------------
@@ -186,10 +185,9 @@ or from outside the cluster
 c = Client('{scheduler}:8786')
 """
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler, worker = services_in_context(context)
+    jupyter, scheduler = services_in_context(context)
     par = pardir(cluster)
-    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par,
-                          worker=worker))
+    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par))
 
 
 def services_in_context(context):
@@ -200,9 +198,7 @@ def services_in_context(context):
             jupyter = words[2]
         if words and words[0] == 'dask-scheduler':
             scheduler = words[2]
-        if words and words[0] == 'dask-worker':
-            worker = words[2]
-    return jupyter, scheduler, worker
+    return jupyter, scheduler
 
 
 def counts(cluster):
@@ -237,8 +233,17 @@ def dashboard(ctx, cluster):
 @click.argument('cluster', required=True)
 def notebook(ctx, cluster):
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler, worker = services_in_context(context)
+    jupyter, scheduler = services_in_context(context)
     webbrowser.open('http://{}:8888'.format(jupyter))
+
+
+@cli.command(short_help='Open the dask status dashboard in the browser')
+@click.pass_context
+@click.argument('cluster', required=True)
+def status(ctx, cluster):
+    context = get_context_from_cluster(cluster)
+    jupyter, scheduler = services_in_context(context)
+    webbrowser.open('http://{}:8787/status'.format(scheduler))
 
 
 @cli.command(short_help="Delete a cluster.")
