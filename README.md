@@ -66,7 +66,7 @@ $ python setup.py install
 
 Make any changes you may require in
 
-- kubernetes/dask_processes.yaml, settings for the number of workers and their
+- kubernetes/dask_workers.yaml, settings for the number of workers and their
   parameters.
 
 When ready, launch with one command (assumes `NAME` is substituted with your
