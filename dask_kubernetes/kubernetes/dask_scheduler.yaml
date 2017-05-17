@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dask-scheduler
-          image: mdurant/dask-kubernetes:latest
+          image: {{scheduler.image}}
           args: ["dask-scheduler"]
           ports:
           - name: rpc
@@ -30,6 +30,6 @@ spec:
             containerPort: 8787
           resources:
             requests: 
-              cpu: 1
-              memory: 1024Mi
+              cpu: {{scheduler.cpus}}
+              memory: {{scheduler.memory}}
           imagePullPolicy: Always

@@ -6,7 +6,7 @@ metadata:
     app: dask
   name: dask-worker
 spec:
-  replicas: 8
+  replicas: {{workers.count}}
   selector:
     name: dask-worker
   template:
@@ -17,13 +17,15 @@ spec:
     spec:
       containers:
         - name: dask-worker
-          image: mdurant/dask-kubernetes:latest
-          args: ["dask-worker", "dask-scheduler:8786", "--nthreads", "2",
-                 "--memory-limit", "6442450944", "--interface",  "eth0"]
+          image: {{workers.image}}
+          args: ["dask-worker", "dask-scheduler:8786", "--nthreads",
+                 "{{workers.cpus_per_worker2}}", "--memory-limit",
+                 "{{workers.memory_per_worker2}}", "--interface",
+                 "eth0"]
           resources:
             requests:
-              cpu: 1.8
-              memory: 6800Mi
+              cpu: {{workers.cpus_per_worker}}
+              memory: {{workers.memory_per_worker}}
           imagePullPolicy: Always
           securityContext:
             runAsUser: 1000

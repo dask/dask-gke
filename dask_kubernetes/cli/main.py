@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import click
+import jinja2
 import logging
 from math import ceil
 import os
@@ -11,14 +12,18 @@ import sys
 import time
 import traceback
 import webbrowser
+import yaml
 
 from .config import setup_logging
-from .utils import call, check_output, required_commands
+from .utils import (call, check_output, required_commands, get_conf,
+                    render_templates)
 
 
 logger = logging.getLogger(__name__)
-filename = os.path.abspath(os.path.join(os.path.dirname(__file__),
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         '../kubernetes'))
+defaults = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                        'defaults.yaml'))
 
 
 def start():
@@ -47,36 +52,23 @@ def cli(ctx):
     ctx.obj = {}
 
 
+
+
 @cli.command(short_help="Create a cluster.")
 @click.pass_context
 @click.argument('name', required=True)
-@click.option("--num-nodes", "-n",
-              default=6,
-              show_default=True,
-              required=False,
-              help="The number of nodes to be created in the cluster.")
-@click.option("--disk-size",
-              default=50,
-              show_default=True,
-              required=False,
-              help="Size in GB for node VM boot disks.")
-@click.option("--machine-type", "-m",
-              default="n1-standard-4",
-              show_default=True,
-              required=False,
-              help="The type of machine to use for nodes.")
-@click.option("--zone", "-z",
-              default="us-east1-b",
-              show_default=True,
-              required=False,
-              help="The compute zone for the cluster.")
-def create(ctx, name, num_nodes, machine_type, disk_size, zone):
+@click.argument("settings_file", default=None, required=False)
+@click.argument('args', nargs=-1)
+def create(ctx, name, settings_file, args):
+    conf = get_conf(settings_file, args)
+    zone = conf['cluster']['zone']
     call("gcloud config set compute/zone {0}".format(zone))
     call("gcloud config set compute/region {0}".format(zone.rsplit('-', 1)[0]))
     call("gcloud container clusters create {0} --num-nodes {1} --machine-type"
          " {2} --no-async --disk-size {3} --tags=dask --scopes "
          "https://www.googleapis.com/auth/cloud-platform".format(
-            name, num_nodes, machine_type, disk_size))
+            name, conf['cluster']['num_nodes'], conf['cluster']['machine_type'],
+            conf['cluster']['disk_size']))
     try:
         subprocess.check_call("gcloud container clusters get-credentials {0}".
                               format(name), shell=True)
@@ -86,9 +78,7 @@ def create(ctx, name, num_nodes, machine_type, disk_size, zone):
     shutil.rmtree(par, True)
     print("Copying template config to ", par)
     os.makedirs(par, exist_ok=True)  # not PY2 ?
-    for f in os.listdir(filename):
-        fn = os.path.join(filename, f)
-        shutil.copy(fn, par)
+    render_templates(conf, par)
     call("kubectl create -f {0}  --save-config".format(par))
 
 
@@ -104,6 +94,20 @@ def update_config(ctx, cluster):
 def pardir(cluster):
     return os.sep.join([os.path.expanduser('~'), '.dask', 'kubernetes',
                         cluster])
+
+
+@cli.command(short_help="Reset kubernetes values from file or command line "
+                        "and apply")
+@click.pass_context
+@click.argument('name', required=True)
+@click.argument("settings_file", default=None, required=False)
+@click.argument('args', nargs=-1)
+def rerender(ctx, cluster, settings_file, args):
+    conf = get_conf(settings_file, args)
+    par = pardir(cluster)
+    # TODO: apply num_nodes change
+    render_templates(conf, par)
+    update_config(ctx, cluster)
 
 
 @cli.group('resize', short_help="Resize a cluster.")
