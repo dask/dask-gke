@@ -20,8 +20,6 @@ from .utils import (call, check_output, required_commands, get_conf,
 
 
 logger = logging.getLogger(__name__)
-template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        '../kubernetes'))
 
 
 def start():

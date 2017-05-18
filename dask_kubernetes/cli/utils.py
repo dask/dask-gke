@@ -1,5 +1,6 @@
 import functools
 from math import ceil
+import jinja2
 import os
 import subprocess
 import sys
@@ -9,6 +10,8 @@ import click
 
 defaults = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'defaults.yaml'))
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                        '../kubernetes'))
 
 
 def required_commands(*commands):
