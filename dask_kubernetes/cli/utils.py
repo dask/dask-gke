@@ -143,7 +143,7 @@ def render_templates(conf, par):
         os.path.join(par, name): jenv.get_template(name).render(conf)
         for name in jenv.list_templates()
     }
-    configs[par + '.yaml'] = yaml.dump(conf)
+    configs[par + '.yaml'] = yaml.dump(conf, default_flow_style=False)
     return configs
 
 
