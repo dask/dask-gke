@@ -8,7 +8,7 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 8888
+    - port: {{jupyter.port}}
       targetPort: 8888
       name: jupyter-http
   selector:
@@ -24,13 +24,13 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 8786
+    - port: {{scheduler.tcp_port}}
       targetPort: 8786
       name: dask-scheduler-tcp
-    - port: 9786
+    - port: {{scheduler.http_port}}
       targetPort: 9786
       name: dask-scheduler-http
-    - port: 8787
+    - port: {{scheduler.bokeh_port}}
       targetPort: 8787
       name: dask-scheduler-bokeh
   selector:

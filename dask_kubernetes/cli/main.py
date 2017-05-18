@@ -13,12 +13,11 @@ import traceback
 import webbrowser
 
 from .config import setup_logging
-from .utils import call, check_output, required_commands
+from .utils import (call, check_output, required_commands, get_conf,
+                    render_templates, write_templates)
 
 
 logger = logging.getLogger(__name__)
-filename = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        '../kubernetes'))
 
 
 def start():
@@ -50,33 +49,19 @@ def cli(ctx):
 @cli.command(short_help="Create a cluster.")
 @click.pass_context
 @click.argument('name', required=True)
-@click.option("--num-nodes", "-n",
-              default=6,
-              show_default=True,
-              required=False,
-              help="The number of nodes to be created in the cluster.")
-@click.option("--disk-size",
-              default=50,
-              show_default=True,
-              required=False,
-              help="Size in GB for node VM boot disks.")
-@click.option("--machine-type", "-m",
-              default="n1-standard-4",
-              show_default=True,
-              required=False,
-              help="The type of machine to use for nodes.")
-@click.option("--zone", "-z",
-              default="us-east1-b",
-              show_default=True,
-              required=False,
-              help="The compute zone for the cluster.")
-def create(ctx, name, num_nodes, machine_type, disk_size, zone):
+@click.argument("settings_file", default=None, required=False)
+@click.option('--set', '-s', multiple=True,
+              help="Additional key-value pairs to fill in the template.")
+def create(ctx, name, settings_file, set):
+    conf = get_conf(settings_file, set)
+    zone = conf['cluster']['zone']
     call("gcloud config set compute/zone {0}".format(zone))
     call("gcloud config set compute/region {0}".format(zone.rsplit('-', 1)[0]))
     call("gcloud container clusters create {0} --num-nodes {1} --machine-type"
          " {2} --no-async --disk-size {3} --tags=dask --scopes "
          "https://www.googleapis.com/auth/cloud-platform".format(
-            name, num_nodes, machine_type, disk_size))
+            name, conf['cluster']['num_nodes'], conf['cluster']['machine_type'],
+            conf['cluster']['disk_size']))
     try:
         subprocess.check_call("gcloud container clusters get-credentials {0}".
                               format(name), shell=True)
@@ -84,11 +69,9 @@ def create(ctx, name, num_nodes, machine_type, disk_size, zone):
         raise RuntimeError('Cluster creation failed!')
     par = pardir(name)
     shutil.rmtree(par, True)
-    print("Copying template config to ", par)
+    logger.info("Copying template config to ", par)
     os.makedirs(par, exist_ok=True)  # not PY2 ?
-    for f in os.listdir(filename):
-        fn = os.path.join(filename, f)
-        shutil.copy(fn, par)
+    write_templates(render_templates(conf, par))
     call("kubectl create -f {0}  --save-config".format(par))
 
 
@@ -104,6 +87,20 @@ def update_config(ctx, cluster):
 def pardir(cluster):
     return os.sep.join([os.path.expanduser('~'), '.dask', 'kubernetes',
                         cluster])
+
+
+@cli.command(short_help="Reset kubernetes values from file or command line "
+                        "and apply")
+@click.pass_context
+@click.argument('name', required=True)
+@click.argument("settings_file", default=None, required=False)
+@click.argument('args', nargs=-1)
+def rerender(ctx, cluster, settings_file, args):
+    conf = get_conf(settings_file, args)
+    par = pardir(cluster)
+    # TODO: apply num_nodes change
+    write_templates(render_templates(conf, par))
+    update_config(ctx, cluster)
 
 
 @cli.group('resize', short_help="Resize a cluster.")
@@ -171,9 +168,10 @@ def list(ctx):
 def info(ctx, cluster):
     template = """Addresses
 ---------
-   Web Interface:  http://{scheduler}:8787/status
-Jupyter Notebook:  http://{jupyter}:8888
+   Web Interface:  http://{scheduler}:{bport}/status
+Jupyter Notebook:  http://{jupyter}:{jport}
 Config directory:  {par}
+ Config settings:  {par}.yaml
 
 To connect to scheduler inside of cluster
 -----------------------------------------
@@ -182,12 +180,13 @@ c = Client('dask-scheduler:8786')
 
 or from outside the cluster
 
-c = Client('{scheduler}:8786')
+c = Client('{scheduler}:{sport}')
 """
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
+    jupyter, jport, scheduler, sport, bport = services_in_context(context)
     par = pardir(cluster)
-    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par))
+    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par,
+                          sport=sport, bport=bport, jport=jport))
 
 
 def services_in_context(context):
@@ -196,9 +195,12 @@ def services_in_context(context):
         words = line.split()
         if words and words[0] == 'jupyter-notebook':
             jupyter = words[2]
+            jupyter_port = words[3].split(":")[0]
         if words and words[0] == 'dask-scheduler':
             scheduler = words[2]
-    return jupyter, scheduler
+            scheduler_port = words[3].split(":")[0]
+            bokeh_port = words[3].split(',')[-1].split(":")[0]
+    return jupyter, jupyter_port, scheduler, scheduler_port, bokeh_port
 
 
 def counts(cluster):
@@ -233,8 +235,8 @@ def dashboard(ctx, cluster):
 @click.argument('cluster', required=True)
 def notebook(ctx, cluster):
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
-    webbrowser.open('http://{}:8888'.format(jupyter))
+    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    webbrowser.open('http://{}:{}'.format(jupyter, jport))
 
 
 @cli.command(short_help='Open the dask status dashboard in the browser')
@@ -242,8 +244,8 @@ def notebook(ctx, cluster):
 @click.argument('cluster', required=True)
 def status(ctx, cluster):
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
-    webbrowser.open('http://{}:8787/status'.format(scheduler))
+    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    webbrowser.open('http://{}:{}/status'.format(scheduler, bport))
 
 
 @cli.command(short_help="Delete a cluster.")

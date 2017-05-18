@@ -1,0 +1,22 @@
+cluster:
+  num_nodes: 6
+  machine_type: n1-standard-4
+  disk_size: 50
+  zone: us-east1-b
+jupyter:
+  memory: 2048Mi
+  cpus: 1
+  port: 8888
+scheduler:
+  memory: 1024Mi
+  cpus: 1
+  image: mdurant/dask-kubernetes:latest
+  tcp_port: 8786
+  http_port: 9786
+  bokeh_port: 8787
+workers:
+  count: 8
+  cpus_per_worker: 1.8
+  memory_per_worker: 6800Mi
+  mem_factor: 0.95
+  image: mdurant/dask-kubernetes:latest

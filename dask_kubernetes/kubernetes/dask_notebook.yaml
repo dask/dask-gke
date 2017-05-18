@@ -24,8 +24,8 @@ spec:
               containerPort: 8888
           resources:
             requests:
-              cpu: 1
-              memory: 4Gi
+              cpu: {{jupyter.cpus}}
+              memory: {{jupyter.memory}}
           imagePullPolicy: Always
           securityContext:
             runAsUser: 1000
