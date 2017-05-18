@@ -62,6 +62,8 @@ def read_conf(config):
         if os.path.exists(config):
             with open(config) as f:
                 return f.read()
+        else:
+            raise OSError("Couldn't find file {}".format(config))
     elif hasattr(config, 'read'):
         return config.read()
     else:

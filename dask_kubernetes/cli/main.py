@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import click
-import jinja2
 import logging
 from math import ceil
 import os
@@ -12,11 +11,10 @@ import sys
 import time
 import traceback
 import webbrowser
-import yaml
 
 from .config import setup_logging
 from .utils import (call, check_output, required_commands, get_conf,
-                    render_templates)
+                    render_templates, write_templates)
 
 
 logger = logging.getLogger(__name__)
@@ -48,15 +46,14 @@ def cli(ctx):
     ctx.obj = {}
 
 
-
-
 @cli.command(short_help="Create a cluster.")
 @click.pass_context
 @click.argument('name', required=True)
 @click.argument("settings_file", default=None, required=False)
-@click.argument('args', nargs=-1)
-def create(ctx, name, settings_file, args):
-    conf = get_conf(settings_file, args)
+@click.option('--set', '-s', multiple=True,
+              help="Additional key-value pairs to fill in the template.")
+def create(ctx, name, settings_file, set):
+    conf = get_conf(settings_file, set)
     zone = conf['cluster']['zone']
     call("gcloud config set compute/zone {0}".format(zone))
     call("gcloud config set compute/region {0}".format(zone.rsplit('-', 1)[0]))
@@ -74,7 +71,7 @@ def create(ctx, name, settings_file, args):
     shutil.rmtree(par, True)
     print("Copying template config to ", par)
     os.makedirs(par, exist_ok=True)  # not PY2 ?
-    render_templates(conf, par)
+    write_templates(render_templates(conf, par))
     call("kubectl create -f {0}  --save-config".format(par))
 
 
@@ -102,7 +99,7 @@ def rerender(ctx, cluster, settings_file, args):
     conf = get_conf(settings_file, args)
     par = pardir(cluster)
     # TODO: apply num_nodes change
-    render_templates(conf, par)
+    write_templates(render_templates(conf, par))
     update_config(ctx, cluster)
 
 
