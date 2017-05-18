@@ -113,9 +113,7 @@ def get_conf(settings, args):
         settings = yaml.load(read_conf(settings))
         nested_update(conf, settings)
 
-    if args is None:
-        overrides = {}
-    else:
+    if args:
         overrides = [parse_cli_override(arg) for arg in args]
         for override in overrides:
             nested_update(conf, override)
@@ -145,6 +143,7 @@ def render_templates(conf, par):
         os.path.join(par, name): jenv.get_template(name).render(conf)
         for name in jenv.list_templates()
     }
+    configs[par + '.yaml'] = yaml.dump(conf)
     return configs
 
 

@@ -69,7 +69,7 @@ def create(ctx, name, settings_file, set):
         raise RuntimeError('Cluster creation failed!')
     par = pardir(name)
     shutil.rmtree(par, True)
-    print("Copying template config to ", par)
+    logger.info("Copying template config to ", par)
     os.makedirs(par, exist_ok=True)  # not PY2 ?
     write_templates(render_templates(conf, par))
     call("kubectl create -f {0}  --save-config".format(par))
@@ -168,9 +168,10 @@ def list(ctx):
 def info(ctx, cluster):
     template = """Addresses
 ---------
-   Web Interface:  http://{scheduler}:8787/status
-Jupyter Notebook:  http://{jupyter}:8888
+   Web Interface:  http://{scheduler}:{bport}/status
+Jupyter Notebook:  http://{jupyter}:{jport}
 Config directory:  {par}
+ Config settings:  {par}.yaml
 
 To connect to scheduler inside of cluster
 -----------------------------------------
@@ -179,12 +180,13 @@ c = Client('dask-scheduler:8786')
 
 or from outside the cluster
 
-c = Client('{scheduler}:8786')
+c = Client('{scheduler}:{sport}')
 """
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
+    jupyter, jport, scheduler, sport, bport = services_in_context(context)
     par = pardir(cluster)
-    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par))
+    print(template.format(jupyter=jupyter, scheduler=scheduler, par=par,
+                          sport=sport, bport=bport, jport=jport))
 
 
 def services_in_context(context):
@@ -193,9 +195,12 @@ def services_in_context(context):
         words = line.split()
         if words and words[0] == 'jupyter-notebook':
             jupyter = words[2]
+            jupyter_port = words[3].split(":")[0]
         if words and words[0] == 'dask-scheduler':
             scheduler = words[2]
-    return jupyter, scheduler
+            scheduler_port = words[3].split(":")[0]
+            bokeh_port = words[3].split(',')[-1].split(":")[0]
+    return jupyter, jupyter_port, scheduler, scheduler_port, bokeh_port
 
 
 def counts(cluster):
@@ -230,8 +235,8 @@ def dashboard(ctx, cluster):
 @click.argument('cluster', required=True)
 def notebook(ctx, cluster):
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
-    webbrowser.open('http://{}:8888'.format(jupyter))
+    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    webbrowser.open('http://{}:{}'.format(jupyter, jport))
 
 
 @cli.command(short_help='Open the dask status dashboard in the browser')
@@ -239,8 +244,8 @@ def notebook(ctx, cluster):
 @click.argument('cluster', required=True)
 def status(ctx, cluster):
     context = get_context_from_cluster(cluster)
-    jupyter, scheduler = services_in_context(context)
-    webbrowser.open('http://{}:8787/status'.format(scheduler))
+    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    webbrowser.open('http://{}:{}/status'.format(scheduler, bport))
 
 
 @cli.command(short_help="Delete a cluster.")
