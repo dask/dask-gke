@@ -1,3 +1,4 @@
+import collections
 import functools
 from math import ceil
 import jinja2
@@ -6,6 +7,7 @@ import subprocess
 import sys
 import yaml
 
+import six
 import click
 
 defaults = os.path.abspath(os.path.join(os.path.dirname(__file__),
@@ -55,6 +57,45 @@ def mem_bytes(m):
     return m
 
 
+def read_conf(config):
+    if isinstance(config, (six.string_types, bytes)):
+        if os.path.exists(config):
+            with open(config) as f:
+                return f.read()
+        else:
+            raise OSError("Couldn't find file {}".format(config))
+    elif hasattr(config, 'read'):
+        return config.read()
+    else:
+        raise TypeError
+
+
+def nested_update(d, u):
+    """Update dictionary `d` based on `u`, which which may also be
+    a dictionary.
+    """
+    # http://stackoverflow.com/a/3233356/1889400
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            r = nested_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
+
+
+def parse_cli_override(s):
+    r"""foo.bar=baz -> {'foo': {'bar': 'baz'}"""
+    key, val = s.split('=')
+    keys = key.split('.')
+
+    d = {keys[-1]: val}
+
+    for k in reversed(keys[:-1]):
+        d = {k: dict(d)}
+    return d
+
+
 def get_conf(settings, args):
     """Produce configuration dictionary
 
@@ -69,13 +110,16 @@ def get_conf(settings, args):
         Override parameters like "jupyter.port=443"."""
     conf = yaml.load(open(defaults).read())
     if settings is not None:
-        conf.update(yaml.load(open(settings).read()))
-    for arg in args:
-        key, value = arg.split('=')
-        conf0 = conf
-        for key_part in key.split('.')[:-1]:
-            conf0 = conf[key_part]
-        conf0[key.split('.')[-1]] = value
+        settings = yaml.load(read_conf(settings))
+        nested_update(conf, settings)
+
+    if args is None:
+        overrides = {}
+    else:
+        overrides = [parse_cli_override(arg) for arg in args]
+        for override in overrides:
+            nested_update(conf, override)
+
     # worker memory should be slightly less than container capacity
     factor = float(conf['workers']['mem_factor'])
     conf['workers']['memory_per_worker2'] = int(factor * mem_bytes(
@@ -95,10 +139,16 @@ def render_templates(conf, par):
     par: str
         Directory to write to
     """
-    jenv = jinja2.Environment()
-    for f in os.listdir(template_dir):
-        fn = os.path.join(template_dir, f)
-        templ = jenv.from_string(open(fn).read())
-        out = os.path.join(par, f)
-        with open(out, 'w') as f:
-            f.write(templ.render(conf))
+    loader = jinja2.PackageLoader("dask_kubernetes", package_path="kubernetes")
+    jenv = jinja2.Environment(loader=loader)
+    configs = {
+        os.path.join(par, name): jenv.get_template(name).render(conf)
+        for name in jenv.list_templates()
+    }
+    return configs
+
+
+def write_templates(configs):
+    for fn, config in configs.items():
+        with open(fn, 'wt') as f:
+            f.write(config)
