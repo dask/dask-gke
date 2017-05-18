@@ -1,8 +1,14 @@
 import functools
+from math import ceil
+import os
 import subprocess
 import sys
+import yaml
 
 import click
+
+defaults = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                        'defaults.yaml'))
 
 
 def required_commands(*commands):
