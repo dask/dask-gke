@@ -56,9 +56,9 @@ def cli(ctx, verbose):
 @click.argument("settings_file", default=None, required=False)
 @click.option('--set', '-s', multiple=True,
               help="Additional key-value pairs to fill in the template.")
-@click.option('--wait', '-w', default=True, is_flag=True,
-              help="Block until cluster is available, and then print info")
-def create(ctx, name, settings_file, set, wait):
+@click.option('--nowait', '-n', default=False, is_flag=True,
+              help="Don't wait for kubernetes to respond")
+def create(ctx, name, settings_file, set, nowait):
     conf = get_conf(settings_file, set)
     zone = conf['cluster']['zone']
     call("gcloud config set compute/zone {0}".format(zone))
@@ -79,7 +79,7 @@ def create(ctx, name, settings_file, set, wait):
     os.makedirs(par, exist_ok=True)  # not PY2 ?
     write_templates(render_templates(conf, par))
     call("kubectl create -f {0}  --save-config".format(par))
-    if wait:
+    if not nowait:
         context = get_context_from_cluster(name)
         wait_until_ready(name, context)
         print_info(name, context)
@@ -87,7 +87,7 @@ def create(ctx, name, settings_file, set, wait):
 
 def wait_until_ready(cluster, context=None, poll_time=3):
     """Repeatedly poll kubernetes until cluster is up"""
-    print('Waiting for kubernetes')
+    logger.info('Waiting for kubernetes... (^C to stop)')
     if context is None:
         context = get_context_from_cluster(cluster)
     while True:
@@ -257,6 +257,7 @@ def get_pods(context):
 
 
 def counts(cluster):
+    # TODO: replace by get_pods?
     context = get_context_from_cluster(cluster)
     out = check_output('gcloud container clusters describe {}'.format(cluster))
     nodes = int(re.search('currentNodeCount: (\d+)', out).groups()[0])
@@ -276,7 +277,7 @@ def dashboard(ctx, cluster):
         P = subprocess.Popen('kubectl --context {0} proxy'.format(
             context).split())
         webbrowser.open('http://localhost:8001/ui')
-        print('\nProxy running - press ^C to exit')
+        logger.info('\nProxy running - press ^C to exit')
         while True:
             time.sleep(100)
     finally:
