@@ -64,56 +64,49 @@ Install `dask-kubernetes` CLI via:
 $ python setup.py install
 ```
 
-Make any changes you may require in
+## Usage
 
-- kubernetes/dask_workers.yaml, settings for the number of workers and their
-  parameters.
 
-When ready, launch with one command (assumes `NAME` is substituted with your
-cluster name and the command is invoked from the repository's root directory):
+Default settings for the cluster are stored in 
+[defaults.yaml](dask_kubernetes/cli/defaults.yaml)
+
+The easiest way to customize the cluster to your own purposes is to make
+a copy of this file, edit it, and supply it on the command line. The settings
+used for a new cluster are a combination of the built-in settings, any
+new values in a supplied file, and command-line options
+
+To launch with default values only (where NAME is the label for the cluster):
 
 ```bash
 dask-kubernetes create NAME
 ```
 
-You may also modify the default number of nodes or cluster region. See the help
-documentation for specific settings:
-
-```
-dask-kubernetes create --help
-```
-
-This will take some time. Next, wait for the pods to come online. You can
-repeatedly run the following:
+To launch with a provided file:
 
 ```bash
-kubectl get pods -l app=dask
+dask-kubernetes create NAME settings.yaml
 ```
 
-and you will see something like
-
-```
-$ kubectl get pods
-NAME                     READY     STATUS              RESTARTS   AGE
-dask-scheduler-hebul     0/1       ContainerCreating   0          32s
-dask-worker-2dpr1        0/1       ContainerCreating   0          32s
-...
-jupyter-notebook-z58dm   0/1       ContainerCreating   0          32s
-```
-
-When everything turns `Running`, check the IP of the notebook server
+To launch with a single override parameter
 
 ```bash
-> kubectl get services -l app=dask
-
-
-NAME               CLUSTER-IP      EXTERNAL-IP    PORT(S)          AGE
-jupyter-notebook   10.51.252.116   99.99.99.99    8888:30651/TCP   1m
-dask-scheduler     10.51.252.117   99.99.99.98    8787:...
+dask-kubernetes create -s jupyter.port=443 NAME
 ```
 
-For this output, you can access the UI by pointing a browser to
-99.99.99.99:8888.  You can connect to the distributed scheduler by doing the
+By default, the process will block until done, and then print details
+about the created cluster to the screen, including the addresses of 
+the dask-scheduler, the jupyter notebook, and the Bokeh status monitor.
+This same information can be retrieved again with the `info` command.
+Most users will want to navigate to the notebook first, which can also
+be achieved by calling 
+
+```bash
+dask-kubernetes notebook NAME
+```
+
+and similarly, the `status` command opens the cluster status page.
+
+From within the cluster, you can connect to the distributed scheduler by doing the
 following:
 
 ```python
@@ -121,14 +114,6 @@ from dask.distributed import Client
 c = Client('dask-scheduler:8786')
 ```
 
-You can view the bokeh dashboards in a browser on 99.99.99.98:8787 and
-99.99.99.97:8788 and you can connect to the scheduler from *outside* of the
-cluster by doing
-
-```python
-from dask.distributed import Client
-c = Client('99.99.99.98:8786')
-```
 
 When you are done, delete the cluster with the following:
 
@@ -136,8 +121,22 @@ When you are done, delete the cluster with the following:
 dask-kubernetes delete NAME
 ```
 
+(requests confirmation).
+
 
 ## Extras
+
+`dask-kubernetes` work by calling `kubectl`. For those who want finer control
+or to investigate the state of the cluster, `kubectl` commands can be
+entered on the command line as for any other Kubernetes cluster. Furthermore,
+the Kubernetes dashboard is available using
+
+```bash
+dask-kubernetes dashboard NAME
+```
+
+(note that, unlike the other commands which open browser tabs, this command
+is blocking on the command line, since it needs to maintain a proxy connection.)
 
 ### Resize cluster
 
@@ -147,7 +146,7 @@ power and memory, you must both increase the number of machines and the number o
 To add machines to the cluster, you may do the following
 
 ```bash
-dask-kubernetes resize nodes CLUSTER COUNT
+dask-kubernetes resize nodes NAME COUNT
 ```
 
 (of course, the more machines, the higher the bill will be)
@@ -155,11 +154,17 @@ dask-kubernetes resize nodes CLUSTER COUNT
 To add worker containers, you may do the following
 
 ```bash
-dask-kubernetes resize pods CLUSTER COUNT
+dask-kubernetes resize pods NAME COUNT
 ```
 
-Querying the pods again will tell you whether the selected number of worker containers
-can actually fit into the available machines.
+or resize both while keeping the workers:nodes ratio constant
+
+```bash
+dask-kubernetes resize both NAME COUNT
+```
+
+(you give the new number of workers requested).
+
 
 Note that if you allocate more resources than your cluster can
 handle, some pods will not start; even if you use auto-scaling, additional
@@ -167,6 +172,7 @@ nodes are only launched when CPU usage on existing nodes rises.
 To enable auto-scaling, add the following flags to the gcloud container create line in
 ``make_cluster.sh``: ``--enable-autoscaling --min-nodes=6 --max-nodes=16``
 
+To see the state of the worker pods, use `kubectl` or the Kubernetes dashboard.
 
 ### Logs
 
@@ -207,6 +213,12 @@ total 56
 -rw-r--r-- 1 basicuser root 33712 May 17 11:29 sklearn_parameter_search.ipynb
 -rw-r--r-- 1 basicuser root 14407 May 17 11:29 sklearn_parameter_search_joblib.ipynb
 ```
+
+where "dask-scheduler-hebul" is the specific pod name of the scheduler.
+
+It is, of course, also possible to run shell commands directly in the Jupyter
+notebook, or to use python's `subprocess` with dask's `Client.run` to
+programmatically call commands on the worker containers.
 
 ### Alternate docker image
 
