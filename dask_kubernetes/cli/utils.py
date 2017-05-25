@@ -2,18 +2,19 @@ import collections
 import functools
 from math import ceil
 import jinja2
+import logging
 import os
 import subprocess
 import sys
 import yaml
 
 import six
-import click
 
 defaults = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'defaults.yaml'))
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         '../kubernetes'))
+logger = logging.getLogger(__name__)
 
 
 def required_commands(*commands):
@@ -29,7 +30,8 @@ def required_commands(*commands):
                     # Unix-specific command lookup
                     subprocess.check_output("which {}".format(command), shell=True)
                 except subprocess.CalledProcessError:
-                    click.echo("Required command does not exist: {}".format(command), err=True)
+                    logger.error("Required command does not exist: {}".format(
+                        command))
                     failed = True
             if failed:
                 sys.exit(1)
@@ -39,12 +41,12 @@ def required_commands(*commands):
 
 
 def call(cmd):
-    click.secho("executing: {}".format(cmd), fg='green')
+    logger.debug("executing: {}".format(cmd))
     subprocess.call(cmd, shell=True)
 
 
 def check_output(cmd):
-    click.secho("executing: {}".format(cmd), fg='green')
+    logger.debug("executing: {}".format(cmd))
     return subprocess.check_output(cmd, shell=True).decode("utf-8")
 
 

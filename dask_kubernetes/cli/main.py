@@ -22,13 +22,12 @@ logger = logging.getLogger(__name__)
 
 def start():
     try:
-        setup_logging(logging.DEBUG)
         cli(obj={})
     except KeyboardInterrupt:
-        click.echo("Interrupted by Ctrl-C.")
+        logger.info("Interrupted by Ctrl-C.")
         sys.exit(1)
     except Exception:
-        click.echo(traceback.format_exc(), err=True)
+        logger.critical(traceback.format_exc())
         sys.exit(1)
 
 
@@ -39,10 +38,15 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.version_option(prog_name="dask-kubernetes", version="0.0.1")
 @click.pass_context
 @required_commands("gcloud", "kubectl")
-def cli(ctx):
+@click.option('--verbose', '-v', required=False, default=False, is_flag=True)
+def cli(ctx, verbose):
     """
     Create and manage Dask clusters on Kubernetes.
     """
+    if verbose:
+        setup_logging(logging.DEBUG)
+    else:
+        setup_logging(logging.INFO)
     ctx.obj = {}
 
 
@@ -52,7 +56,9 @@ def cli(ctx):
 @click.argument("settings_file", default=None, required=False)
 @click.option('--set', '-s', multiple=True,
               help="Additional key-value pairs to fill in the template.")
-def create(ctx, name, settings_file, set):
+@click.option('--nowait', '-n', default=False, is_flag=True,
+              help="Don't wait for kubernetes to respond")
+def create(ctx, name, settings_file, set, nowait):
     conf = get_conf(settings_file, set)
     zone = conf['cluster']['zone']
     call("gcloud config set compute/zone {0}".format(zone))
@@ -69,10 +75,35 @@ def create(ctx, name, settings_file, set):
         raise RuntimeError('Cluster creation failed!')
     par = pardir(name)
     shutil.rmtree(par, True)
-    logger.info("Copying template config to ", par)
+    logger.info("Copying template config to %s" % par)
     os.makedirs(par, exist_ok=True)  # not PY2 ?
     write_templates(render_templates(conf, par))
     call("kubectl create -f {0}  --save-config".format(par))
+    if not nowait:
+        context = get_context_from_cluster(name)
+        wait_until_ready(name, context)
+        print_info(name, context)
+
+
+def wait_until_ready(cluster, context=None, poll_time=3):
+    """Repeatedly poll kubernetes until cluster is up"""
+    logger.info('Waiting for kubernetes... (^C to stop)')
+    if context is None:
+        context = get_context_from_cluster(cluster)
+    while True:
+        logger.debug('Polling for services')
+        jupyter, jport, scheduler, sport, bport = services_in_context(context)
+        if jport.isdecimal() and sport.isdecimal():
+            break
+        time.sleep(poll_time)
+    logger.info('Services are up')
+    while True:
+        logger.debug('Polling for pods')
+        live, dead = get_pods(context)
+        if 'jupyter-notebook' in live and 'dask-scheduler' in live:
+            break
+        time.sleep(3)
+    logger.info('Pods are up')
 
 
 @cli.command(short_help='Update config from parameter files')
@@ -166,6 +197,11 @@ def list(ctx):
 @click.pass_context
 @click.argument('cluster', required=True)
 def info(ctx, cluster):
+    context = get_context_from_cluster(cluster)
+    print_info(cluster, context)
+
+
+def print_info(cluster, context):
     template = """Addresses
 ---------
    Web Interface:  http://{scheduler}:{bport}/status
@@ -181,12 +217,15 @@ c = Client('dask-scheduler:8786')
 or from outside the cluster
 
 c = Client('{scheduler}:{sport}')
+
+Live pods: 
+{live}
 """
-    context = get_context_from_cluster(cluster)
     jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    live, _ = get_pods(context)
     par = pardir(cluster)
     print(template.format(jupyter=jupyter, scheduler=scheduler, par=par,
-                          sport=sport, bport=bport, jport=jport))
+                          sport=sport, bport=bport, jport=jport, live=live))
 
 
 def services_in_context(context):
@@ -203,7 +242,22 @@ def services_in_context(context):
     return jupyter, jupyter_port, scheduler, scheduler_port, bokeh_port
 
 
+def get_pods(context):
+    out = check_output("kubectl --context {0} get pods".format(context))
+    live, dead = {}, {}
+    for lines in out.split('\n'):
+        for label in ['jupyter-notebook', 'dask-scheduler', 'dask-worker']:
+            if lines.startswith(label):
+                words = lines.split()
+                if int(words[1].split('/')[0]):
+                    live.setdefault(label, []).append(words[0])
+                else:
+                    dead.setdefault(label, []).append(words[0])
+    return live, dead
+
+
 def counts(cluster):
+    # TODO: replace by get_pods?
     context = get_context_from_cluster(cluster)
     out = check_output('gcloud container clusters describe {}'.format(cluster))
     nodes = int(re.search('currentNodeCount: (\d+)', out).groups()[0])
@@ -223,7 +277,7 @@ def dashboard(ctx, cluster):
         P = subprocess.Popen('kubectl --context {0} proxy'.format(
             context).split())
         webbrowser.open('http://localhost:8001/ui')
-        print('\nProxy running - press ^C to exit')
+        logger.info('\nProxy running - press ^C to exit')
         while True:
             time.sleep(100)
     finally:
