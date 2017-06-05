@@ -149,7 +149,17 @@ def render_templates(conf, par):
     return configs
 
 
+def load_config(cluster):
+    """Load back the saved configuration for given cluster"""
+    return yaml.load(open(pardir(cluster) + '.yaml'))
+
+
 def write_templates(configs):
     for fn, config in configs.items():
         with open(fn, 'wt') as f:
             f.write(config)
+
+
+def pardir(cluster):
+    return os.sep.join([os.path.expanduser('~'), '.dask', 'kubernetes',
+                        cluster])

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import click
+import json
 import logging
 from math import ceil
 import os
@@ -14,7 +15,7 @@ import webbrowser
 
 from .config import setup_logging
 from .utils import (call, check_output, required_commands, get_conf,
-                    render_templates, write_templates)
+                    render_templates, write_templates, pardir, load_config)
 
 
 logger = logging.getLogger(__name__)
@@ -75,12 +76,13 @@ def create(ctx, name, settings_file, set, nowait):
         raise RuntimeError('Cluster creation failed!')
     par = pardir(name)
     shutil.rmtree(par, True)
+    context = get_context_from_cluster(name)
+    conf['context'] = context
     logger.info("Copying template config to %s" % par)
     os.makedirs(par, exist_ok=True)  # not PY2 ?
     write_templates(render_templates(conf, par))
     call("kubectl create -f {0}  --save-config".format(par))
     if not nowait:
-        context = get_context_from_cluster(name)
         wait_until_ready(name, context)
         print_info(name, context)
 
@@ -89,11 +91,11 @@ def wait_until_ready(cluster, context=None, poll_time=3):
     """Repeatedly poll kubernetes until cluster is up"""
     logger.info('Waiting for kubernetes... (^C to stop)')
     if context is None:
-        context = get_context_from_cluster(cluster)
+        context = get_context_from_settings(cluster)
     while True:
         logger.debug('Polling for services')
         jupyter, jport, scheduler, sport, bport = services_in_context(context)
-        if jport.isdecimal() and sport.isdecimal():
+        if jport and sport:
             break
         time.sleep(poll_time)
     logger.info('Services are up')
@@ -110,14 +112,9 @@ def wait_until_ready(cluster, context=None, poll_time=3):
 @click.pass_context
 @click.argument('cluster', required=True)
 def update_config(ctx, cluster):
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     par = pardir(cluster)
     call("kubectl --context {} apply -f {}".format(context, par))
-
-
-def pardir(cluster):
-    return os.sep.join([os.path.expanduser('~'), '.dask', 'kubernetes',
-                        cluster])
 
 
 @cli.command(short_help="Reset kubernetes values from file or command line "
@@ -156,7 +153,7 @@ def nodes(ctx, cluster, value):
 @click.argument('value', required=True)
 def both(ctx, cluster, value):
     value = int(value)
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     n, p = counts(cluster)
     call("gcloud container clusters resize {0} --size {1} --async".format(
         cluster, ceil(n * value/p)))
@@ -177,12 +174,20 @@ def get_context_from_cluster(cluster):
     return None
 
 
+def get_context_from_settings(cluster):
+    """
+    Retreive saved value of 'context'
+    """
+    conf = load_config(cluster)
+    return conf['context']
+
+
 @resize.command("pods", short_help="Resize the number of pods in a cluster.")
 @click.pass_context
 @click.argument('cluster', required=True)
 @click.argument('value', required=True)
 def pods(ctx, cluster, value):
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     call("kubectl --context {0} scale rc dask-worker --replicas {1}".format(
         context, value))
 
@@ -197,7 +202,7 @@ def list(ctx):
 @click.pass_context
 @click.argument('cluster', required=True)
 def info(ctx, cluster):
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     print_info(cluster, context)
 
 
@@ -229,36 +234,50 @@ Live pods:
 
 
 def services_in_context(context):
-    out = check_output("kubectl --context {0} get services".format(context))
-    for line in out.split('\n'):
-        words = line.split()
-        if words and words[0] == 'jupyter-notebook':
-            jupyter = words[2]
-            jupyter_port = words[3].split(":")[0]
-        if words and words[0] == 'dask-scheduler':
-            scheduler = words[2]
-            scheduler_port = words[3].split(":")[0]
-            bokeh_port = words[3].split(',')[-1].split(":")[0]
+    out = check_output("kubectl --output=json --context {0}"
+                       " get services".format(context))
+    out = json.loads(out)['items']
+    for item in out:
+        try:
+            name = item['spec']['selector']['name']
+            ports = item['spec']['ports']
+            ip = item['status']['loadBalancer']['ingress'][0]['ip']
+        except KeyError:
+            continue
+        if name == 'jupyter-notebook':
+            jupyter = ip
+            jupyter_port = ports[0]['port']
+        if name == 'dask-scheduler':
+            scheduler = ip
+            for port in ports:
+                if port['name'] == 'dask-scheduler-tcp':
+                    scheduler_port = port['port']
+                if port['name'] == 'dask-scheduler-bokeh':
+                    bokeh_port = port['port']
     return jupyter, jupyter_port, scheduler, scheduler_port, bokeh_port
 
 
 def get_pods(context):
-    out = check_output("kubectl --context {0} get pods".format(context))
+    out = check_output("kubectl --output=json --context {0}"
+                       " get pods".format(context))
     live, dead = {}, {}
-    for lines in out.split('\n'):
-        for label in ['jupyter-notebook', 'dask-scheduler', 'dask-worker']:
-            if lines.startswith(label):
-                words = lines.split()
-                if int(words[1].split('/')[0]):
-                    live.setdefault(label, []).append(words[0])
-                else:
-                    dead.setdefault(label, []).append(words[0])
+    out = json.loads(out)['items']
+    for item in out:
+        container = item['spec']['containers'][0]
+        name = container['name']
+        if name in ['jupyter-notebook', 'dask-scheduler', 'dask-worker']:
+            ready = item['status']['containerStatuses'][0]['ready']
+            pod = item['metadata']['name']
+            if ready:
+                live.setdefault(name, []).append(pod)
+            else:
+                dead.setdefault(name, []).append(pod)
     return live, dead
 
 
 def counts(cluster):
     # TODO: replace by get_pods?
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     out = check_output('gcloud container clusters describe {}'.format(cluster))
     nodes = int(re.search('currentNodeCount: (\d+)', out).groups()[0])
     out = check_output(
@@ -272,7 +291,7 @@ def counts(cluster):
 @click.pass_context
 @click.argument('cluster', required=True)
 def dashboard(ctx, cluster):
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     try:
         P = subprocess.Popen('kubectl --context {0} proxy'.format(
             context).split())
@@ -288,7 +307,7 @@ def dashboard(ctx, cluster):
 @click.pass_context
 @click.argument('cluster', required=True)
 def notebook(ctx, cluster):
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     jupyter, jport, scheduler, sport, bport = services_in_context(context)
     webbrowser.open('http://{}:{}'.format(jupyter, jport))
 
@@ -297,7 +316,7 @@ def notebook(ctx, cluster):
 @click.pass_context
 @click.argument('cluster', required=True)
 def status(ctx, cluster):
-    context = get_context_from_cluster(cluster)
+    context = get_context_from_settings(cluster)
     jupyter, jport, scheduler, sport, bport = services_in_context(context)
     webbrowser.open('http://{}:{}/status'.format(scheduler, bport))
 
