@@ -237,6 +237,7 @@ def services_in_context(context):
     out = check_output("kubectl --output=json --context {0}"
                        " get services".format(context))
     out = json.loads(out)['items']
+    jupyter, jupyter_port, scheduler, scheduler_port, bokeh_port = [None] * 5
     for item in out:
         try:
             name = item['spec']['selector']['name']
@@ -309,7 +310,10 @@ def dashboard(ctx, cluster):
 def notebook(ctx, cluster):
     context = get_context_from_settings(cluster)
     jupyter, jport, scheduler, sport, bport = services_in_context(context)
-    webbrowser.open('http://{}:{}'.format(jupyter, jport))
+    if jupyter and jport:
+        webbrowser.open('http://{}:{}'.format(jupyter, jport))
+    else:
+        logger.info('Notebook service not ready')
 
 
 @cli.command(short_help='Open the dask status dashboard in the browser')
@@ -318,7 +322,10 @@ def notebook(ctx, cluster):
 def status(ctx, cluster):
     context = get_context_from_settings(cluster)
     jupyter, jport, scheduler, sport, bport = services_in_context(context)
-    webbrowser.open('http://{}:{}/status'.format(scheduler, bport))
+    if scheduler and bport:
+        webbrowser.open('http://{}:{}/status'.format(scheduler, bport))
+    else:
+        logger.info('Status service not ready')
 
 
 @cli.command(short_help="Delete a cluster.")
