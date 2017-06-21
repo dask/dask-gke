@@ -144,12 +144,28 @@ def rerender(ctx, cluster, settings_file, args):
 def resize():
     pass
 
+def autoscaling_enabled(cluster):
+    """
+    Returns True if autoscaling is enabled for a cluster; False otherwise.
+    """
+    out = check_output(
+        "gcloud container clusters describe {cluster} --format json".format(
+            cluster=cluster))
+    out = json.loads(out)
+    autoscaling_info = out['nodePools'][0].get('autoscaling')
+    return autoscaling_info and autoscaling_info.get('enabled')
 
 @resize.command("nodes", short_help="Resize the number of nodes in a cluster.")
 @click.pass_context
 @click.argument('cluster', required=True)
 @click.argument('value', required=True)
 def nodes(ctx, cluster, value):
+    if autoscaling_enabled(cluster):
+        if not click.confirm(
+                'Node autoscaling is enabled for this cluster. '
+                'Are you sure you want to proceed?'):
+            return
+
     call("gcloud container clusters resize {0} --size {1} --async".format(
         cluster, value))
 
@@ -161,9 +177,16 @@ def nodes(ctx, cluster, value):
 @click.argument('cluster', required=True)
 @click.argument('value', required=True)
 def both(ctx, cluster, value):
+    if autoscaling_enabled(cluster):
+        if not click.confirm(
+                'Node autoscaling is enabled for this cluster. '
+                'Are you sure you want to proceed?'):
+            return
+
     value = int(value)
     context = get_context_from_settings(cluster)
     n, p = counts(cluster)
+
     call("gcloud container clusters resize {0} --size {1} --async".format(
         cluster, ceil(n * value/p)))
     call("kubectl --context {0} scale rc dask-worker --replicas {1}".format(

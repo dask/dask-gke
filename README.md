@@ -165,16 +165,25 @@ dask-kubernetes resize both NAME COUNT
 
 (you give the new number of workers requested).
 
-
 Note that if you allocate more resources than your cluster can
-handle, some pods will not start; even if you use auto-scaling, additional
-nodes are only launched when CPU usage on existing nodes rises.
-To enable auto-scaling, change the appropriate line in `defaults.yaml` or run:
-```bash
-dask-kubernetes NAME -s cluster.autoscaling=True -s cluster.min_nodes=MIN -s cluster.max_nodes=MAX
-```
+handle, some pods will not start.
 
 To see the state of the worker pods, use `kubectl` or the Kubernetes dashboard.
+
+#### Node Autoscaling
+
+Kubernetes can automatically add or remove nodes to your cluster if you create
+the cluster with autoscaling enabled. Nodes will be added if worker pods can't
+be scheduled on the existing cluster, and removed if nodes are going unused.
+
+Note that autoscaling affects the number of machines in the cluster (and
+consequently the cost of the cluster!), not the number of Dask workers,
+and must  be turned on when the cluster is created.
+
+To enable autoscaling, change the appropriate line in `defaults.yaml` or run:
+```bash
+dask-kubernetes create NAME -s cluster.autoscaling=True -s cluster.min_nodes=MIN -s cluster.max_nodes=MAX
+```
 
 ### Logs
 
