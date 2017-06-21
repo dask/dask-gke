@@ -2,7 +2,7 @@
 
 This repo hosts some sample configuration to set up Kubernetes containerized
 environments for interactive cluster computing in Python with [Jupyter
-notebook](http://jupyter.org/) [dask](http://dask.pydata.org/) 
+notebook](http://jupyter.org/) [dask](http://dask.pydata.org/)
 and other tools from the PyData and SciPy
 ecosystems.
 
@@ -67,7 +67,7 @@ $ python setup.py install
 ## Usage
 
 
-Default settings for the cluster are stored in 
+Default settings for the cluster are stored in
 [defaults.yaml](dask_kubernetes/cli/defaults.yaml)
 
 The easiest way to customize the cluster to your own purposes is to make
@@ -94,11 +94,11 @@ dask-kubernetes create -s jupyter.port=443 NAME
 ```
 
 By default, the process will block until done, and then print details
-about the created cluster to the screen, including the addresses of 
+about the created cluster to the screen, including the addresses of
 the dask-scheduler, the jupyter notebook, and the Bokeh status monitor.
 This same information can be retrieved again with the `info` command.
 Most users will want to navigate to the notebook first, which can also
-be achieved by calling 
+be achieved by calling
 
 ```bash
 dask-kubernetes notebook NAME
@@ -165,14 +165,25 @@ dask-kubernetes resize both NAME COUNT
 
 (you give the new number of workers requested).
 
-
 Note that if you allocate more resources than your cluster can
-handle, some pods will not start; even if you use auto-scaling, additional
-nodes are only launched when CPU usage on existing nodes rises.
-To enable auto-scaling, add the following flags to the gcloud container create line in
-``make_cluster.sh``: ``--enable-autoscaling --min-nodes=6 --max-nodes=16``
+handle, some pods will not start.
 
 To see the state of the worker pods, use `kubectl` or the Kubernetes dashboard.
+
+#### Node Autoscaling
+
+Kubernetes can automatically add or remove nodes to your cluster if you create
+the cluster with autoscaling enabled. Nodes will be added if worker pods can't
+be scheduled on the existing cluster, and removed if nodes are going unused.
+
+Note that autoscaling affects the number of machines in the cluster (and
+consequently the cost of the cluster!), not the number of Dask workers,
+and must  be turned on when the cluster is created.
+
+To enable autoscaling, change the appropriate line in `defaults.yaml` or run:
+```bash
+dask-kubernetes create NAME -s cluster.autoscaling=True -s cluster.min_nodes=MIN -s cluster.max_nodes=MAX
+```
 
 ### Logs
 
@@ -222,7 +233,7 @@ programmatically call commands on the worker containers.
 
 ### Alternate docker image
 
-Each type of pod in dask-kubernetes currently is founded on the docker image 
+Each type of pod in dask-kubernetes currently is founded on the docker image
 ``mdurant/dask-kubernetes:latest``. The Dockerfile is included in this repo. Users
 may wish to alter particularly the conda/pip installations in the middle of the work-flow.
 
