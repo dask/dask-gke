@@ -64,11 +64,20 @@ def create(ctx, name, settings_file, set, nowait):
     zone = conf['cluster']['zone']
     call("gcloud config set compute/zone {0}".format(zone))
     call("gcloud config set compute/region {0}".format(zone.rsplit('-', 1)[0]))
+
+    if conf['cluster']['autoscaling']:
+        autoscaling = (
+            '--enable-autoscaling --min-nodes={min} --max-nodes={max}'.format(
+                min=conf['cluster']['min_nodes'],
+                max=conf['cluster']['max_nodes']))
+    else:
+        autoscaling = ''
     call("gcloud container clusters create {0} --num-nodes {1} --machine-type"
-         " {2} --no-async --disk-size {3} --tags=dask --scopes "
+         " {2} --no-async --disk-size {3} {autoscaling} --tags=dask --scopes "
          "https://www.googleapis.com/auth/cloud-platform".format(
             name, conf['cluster']['num_nodes'], conf['cluster']['machine_type'],
-            conf['cluster']['disk_size']))
+            conf['cluster']['disk_size'],
+            autoscaling=autoscaling))
     try:
         subprocess.check_call("gcloud container clusters get-credentials {0}".
                               format(name), shell=True)
@@ -223,7 +232,7 @@ or from outside the cluster
 
 c = Client('{scheduler}:{sport}')
 
-Live pods: 
+Live pods:
 {live}
 """
     jupyter, jport, scheduler, sport, bport = services_in_context(context)
