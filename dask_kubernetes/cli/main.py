@@ -64,11 +64,20 @@ def create(ctx, name, settings_file, set, nowait):
     zone = conf['cluster']['zone']
     call("gcloud config set compute/zone {0}".format(zone))
     call("gcloud config set compute/region {0}".format(zone.rsplit('-', 1)[0]))
+
+    if conf['cluster']['autoscaling']:
+        autoscaling = (
+            '--enable-autoscaling --min-nodes={min} --max-nodes={max}'.format(
+                min=conf['cluster']['min_nodes'],
+                max=conf['cluster']['max_nodes']))
+    else:
+        autoscaling = ''
     call("gcloud container clusters create {0} --num-nodes {1} --machine-type"
-         " {2} --no-async --disk-size {3} --tags=dask --scopes "
+         " {2} --no-async --disk-size {3} {autoscaling} --tags=dask --scopes "
          "https://www.googleapis.com/auth/cloud-platform".format(
             name, conf['cluster']['num_nodes'], conf['cluster']['machine_type'],
-            conf['cluster']['disk_size']))
+            conf['cluster']['disk_size'],
+            autoscaling=autoscaling))
     try:
         subprocess.check_call("gcloud container clusters get-credentials {0}".
                               format(name), shell=True)
@@ -135,12 +144,28 @@ def rerender(ctx, cluster, settings_file, args):
 def resize():
     pass
 
+def autoscaling_enabled(cluster):
+    """
+    Returns True if autoscaling is enabled for a cluster; False otherwise.
+    """
+    out = check_output(
+        "gcloud container clusters describe {cluster} --format json".format(
+            cluster=cluster))
+    out = json.loads(out)
+    autoscaling_info = out['nodePools'][0].get('autoscaling')
+    return autoscaling_info and autoscaling_info.get('enabled')
 
 @resize.command("nodes", short_help="Resize the number of nodes in a cluster.")
 @click.pass_context
 @click.argument('cluster', required=True)
 @click.argument('value', required=True)
 def nodes(ctx, cluster, value):
+    if autoscaling_enabled(cluster):
+        if not click.confirm(
+                'Node autoscaling is enabled for this cluster. '
+                'Are you sure you want to proceed?'):
+            return
+
     call("gcloud container clusters resize {0} --size {1} --async".format(
         cluster, value))
 
@@ -152,9 +177,16 @@ def nodes(ctx, cluster, value):
 @click.argument('cluster', required=True)
 @click.argument('value', required=True)
 def both(ctx, cluster, value):
+    if autoscaling_enabled(cluster):
+        if not click.confirm(
+                'Node autoscaling is enabled for this cluster. '
+                'Are you sure you want to proceed?'):
+            return
+
     value = int(value)
     context = get_context_from_settings(cluster)
     n, p = counts(cluster)
+
     call("gcloud container clusters resize {0} --size {1} --async".format(
         cluster, ceil(n * value/p)))
     call("kubectl --context {0} scale rc dask-worker --replicas {1}".format(
@@ -223,7 +255,7 @@ or from outside the cluster
 
 c = Client('{scheduler}:{sport}')
 
-Live pods: 
+Live pods:
 {live}
 """
     jupyter, jport, scheduler, sport, bport = services_in_context(context)
