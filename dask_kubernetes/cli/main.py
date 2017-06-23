@@ -296,15 +296,18 @@ def get_pods(context):
     live, dead = {}, {}
     out = json.loads(out)['items']
     for item in out:
-        container = item['spec']['containers'][0]
-        name = container['name']
-        if name in ['jupyter-notebook', 'dask-scheduler', 'dask-worker']:
-            ready = item['status']['containerStatuses'][0]['ready']
-            pod = item['metadata']['name']
-            if ready:
-                live.setdefault(name, []).append(pod)
-            else:
-                dead.setdefault(name, []).append(pod)
+        try:
+            container = item['spec']['containers'][0]
+            name = container['name']
+            if name in ['jupyter-notebook', 'dask-scheduler', 'dask-worker']:
+                ready = item['status']['containerStatuses'][0]['ready']
+                pod = item['metadata']['name']
+                if ready:
+                    live.setdefault(name, []).append(pod)
+                else:
+                    dead.setdefault(name, []).append(pod)
+        except:
+            continue
     return live, dead
 
 
