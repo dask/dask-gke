@@ -367,8 +367,24 @@ def status(ctx, cluster):
 @click.pass_context
 @click.argument('name', required=True)
 def delete(ctx, name):
+    conf = load_config(name)
+    region = conf['cluster']['zone']
+    zone = '-'.join(region.split('-')[:2])
+    context = get_context_from_settings(name)
+    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    cmd = 'gcloud compute forwarding-rules list --format json'
+    logger.info(cmd)
+    out = check_output(cmd)
+    items = json.loads(out)
+    for item in items:
+        if item["IPAddress"] in [jupyter, scheduler]:
+            assert ('jupyter-notebook' in item['description'] or
+                    'dask-scheduler' in item['description'])
+            cmd = ('gcloud compute forwarding-rules delete ' +
+                   item['name'] + ' --region ' + zone)
+            logger.info(cmd)
+            call(cmd)
     call("gcloud container clusters delete {0}".format(name))
-
 
 if __name__ == '__main__':
     start()

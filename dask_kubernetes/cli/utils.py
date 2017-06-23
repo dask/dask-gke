@@ -98,7 +98,7 @@ def parse_cli_override(s):
     return d
 
 
-def get_conf(settings, args):
+def get_conf(settings, args=None):
     """Produce configuration dictionary
 
     Starts with default settings, applies given YAML file, and overrides
