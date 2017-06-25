@@ -272,7 +272,7 @@ def services_in_context(context):
                        " get services".format(context))
     out = json.loads(out)['items']
     (jupyter, jupyter_port, jupyterl_port, scheduler, scheduler_port,
-     bokeh_port) = [None] * 5
+     bokeh_port) = [None] * 6
     for item in out:
         try:
             name = item['spec']['selector']['name']
@@ -356,6 +356,18 @@ def notebook(ctx, cluster):
         webbrowser.open('http://{}:{}'.format(jupyter, jport))
     else:
         logger.info('Notebook service not ready')
+
+
+@cli.command(short_help='Open the remote jupyter notebook in the browser')
+@click.pass_context
+@click.argument('cluster', required=True)
+def lab(ctx, cluster):
+    context = get_context_from_settings(cluster)
+    jupyter, jport, jlport, scheduler, sport, bport = services_in_context(context)
+    if jupyter and jport:
+        webbrowser.open('http://{}:{}'.format(jupyter, jlport))
+    else:
+        logger.info('Jupyterlab not ready')
 
 
 @cli.command(short_help='Open the dask status dashboard in the browser')
