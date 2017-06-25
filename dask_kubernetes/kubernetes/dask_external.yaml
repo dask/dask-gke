@@ -11,6 +11,9 @@ spec:
     - port: {{jupyter.port}}
       targetPort: 8888
       name: jupyter-http
+    - port: {{jupyter.lab_port}}
+      targetPort: 8889
+      name: jupyter-lab-http
   selector:
     name: jupyter-notebook
 ---

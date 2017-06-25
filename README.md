@@ -104,7 +104,8 @@ be achieved by calling
 dask-kubernetes notebook NAME
 ```
 
-and similarly, the `status` command opens the cluster status page.
+and similarly, the `status` command opens the cluster status page, or `lab`
+brings up the new "jupyterlab" IDE.
 
 From within the cluster, you can connect to the distributed scheduler by doing the
 following:

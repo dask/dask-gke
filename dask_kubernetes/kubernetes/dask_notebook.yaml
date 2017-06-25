@@ -17,11 +17,13 @@ spec:
     spec:
       containers:
         - name: jupyter-notebook
-          image: mdurant/dask-kubernetes:latest
-          args: ["jupyter", "notebook", "--config=/work/config/jupyter_notebook_config.py", "/work"]
+          image: {{jupyter.image}}
+          args: ["bash", "/work/config/start.sh"]
           ports:
             - name: http
               containerPort: 8888
+            - name: lab-http
+              containerPort: 8889
           resources:
             requests:
               cpu: {{jupyter.cpus}}
