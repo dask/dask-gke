@@ -10,6 +10,7 @@ jupyter:
   memory: 2048Mi
   cpus: 1
   port: 8888
+  lab_port: 8889
 scheduler:
   memory: 1024Mi
   cpus: 1

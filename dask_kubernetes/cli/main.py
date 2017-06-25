@@ -103,7 +103,7 @@ def wait_until_ready(cluster, context=None, poll_time=3):
         context = get_context_from_settings(cluster)
     while True:
         logger.debug('Polling for services')
-        jupyter, jport, scheduler, sport, bport = services_in_context(context)
+        jupyter, jport, jlport, scheduler, sport, bport = services_in_context(context)
         if jport and sport:
             break
         time.sleep(poll_time)
@@ -208,7 +208,7 @@ def get_context_from_cluster(cluster):
 
 def get_context_from_settings(cluster):
     """
-    Retreive saved value of 'context'
+    Retrieve saved value of 'context'
     """
     conf = load_config(cluster)
     return conf['context']
@@ -243,6 +243,7 @@ def print_info(cluster, context):
 ---------
    Web Interface:  http://{scheduler}:{bport}/status
 Jupyter Notebook:  http://{jupyter}:{jport}
+     Jupyter Lab:  http://{jupyter}:{jlport}
 Config directory:  {par}
  Config settings:  {par}.yaml
 
@@ -258,18 +259,20 @@ c = Client('{scheduler}:{sport}')
 Live pods:
 {live}
 """
-    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    jupyter, jport, jlport, scheduler, sport, bport = services_in_context(context)
     live, _ = get_pods(context)
     par = pardir(cluster)
     print(template.format(jupyter=jupyter, scheduler=scheduler, par=par,
-                          sport=sport, bport=bport, jport=jport, live=live))
+                          sport=sport, bport=bport, jport=jport, jlport=jlport,
+                          live=live))
 
 
 def services_in_context(context):
     out = check_output("kubectl --output=json --context {0}"
                        " get services".format(context))
     out = json.loads(out)['items']
-    jupyter, jupyter_port, scheduler, scheduler_port, bokeh_port = [None] * 5
+    (jupyter, jupyter_port, jupyterl_port, scheduler, scheduler_port,
+     bokeh_port) = [None] * 5
     for item in out:
         try:
             name = item['spec']['selector']['name']
@@ -279,7 +282,11 @@ def services_in_context(context):
             continue
         if name == 'jupyter-notebook':
             jupyter = ip
-            jupyter_port = ports[0]['port']
+            for port in ports:
+                if port['name'] == 'jupyter-http':
+                    jupyter_port = port['port']
+                if port['name'] == 'jupyter-lab-http':
+                    jupyterl_port = port['port']
         if name == 'dask-scheduler':
             scheduler = ip
             for port in ports:
@@ -287,7 +294,7 @@ def services_in_context(context):
                     scheduler_port = port['port']
                 if port['name'] == 'dask-scheduler-bokeh':
                     bokeh_port = port['port']
-    return jupyter, jupyter_port, scheduler, scheduler_port, bokeh_port
+    return jupyter, jupyter_port, jupyterl_port, scheduler, scheduler_port, bokeh_port
 
 
 def get_pods(context):
@@ -344,7 +351,7 @@ def dashboard(ctx, cluster):
 @click.argument('cluster', required=True)
 def notebook(ctx, cluster):
     context = get_context_from_settings(cluster)
-    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    jupyter, jport, jlport, scheduler, sport, bport = services_in_context(context)
     if jupyter and jport:
         webbrowser.open('http://{}:{}'.format(jupyter, jport))
     else:
@@ -356,7 +363,7 @@ def notebook(ctx, cluster):
 @click.argument('cluster', required=True)
 def status(ctx, cluster):
     context = get_context_from_settings(cluster)
-    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    jupyter, jport, jlport, scheduler, sport, bport = services_in_context(context)
     if scheduler and bport:
         webbrowser.open('http://{}:{}/status'.format(scheduler, bport))
     else:
@@ -371,7 +378,7 @@ def delete(ctx, name):
     region = conf['cluster']['zone']
     zone = '-'.join(region.split('-')[:2])
     context = get_context_from_settings(name)
-    jupyter, jport, scheduler, sport, bport = services_in_context(context)
+    jupyter, jport, jlport, scheduler, sport, bport = services_in_context(context)
     cmd = 'gcloud compute forwarding-rules list --format json'
     logger.info(cmd)
     out = check_output(cmd)
