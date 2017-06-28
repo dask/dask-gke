@@ -7,13 +7,13 @@ cluster:
   min_nodes: 2
   max_nodes: 32
 jupyter:
-  memory: 2048Mi
+  memory: 4096Mi
   cpus: 1
   port: 8888
   lab_port: 8889
   image: mdurant/dask-kubernetes:latest
 scheduler:
-  memory: 1024Mi
+  memory: 4096Mi
   cpus: 1
   image: mdurant/dask-kubernetes:latest
   tcp_port: 8786
