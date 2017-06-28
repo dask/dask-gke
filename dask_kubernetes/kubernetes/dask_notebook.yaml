@@ -32,3 +32,5 @@ spec:
           securityContext:
             runAsUser: 1000
           workingDir: /work
+      nodeSelector:
+        dask_main: "thisone"

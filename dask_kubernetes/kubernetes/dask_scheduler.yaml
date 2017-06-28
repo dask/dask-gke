@@ -33,3 +33,5 @@ spec:
               cpu: {{scheduler.cpus}}
               memory: {{scheduler.memory}}
           imagePullPolicy: Always
+      nodeSelector:
+        dask_main: "thisone"

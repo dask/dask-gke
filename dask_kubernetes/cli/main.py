@@ -83,9 +83,14 @@ def create(ctx, name, settings_file, set, nowait):
                               format(name), shell=True)
     except:
         raise RuntimeError('Cluster creation failed!')
+    context = get_context_from_cluster(name)
+    # specify label for notebook and scheduler
+    out = json.loads(check_output('kubectl get nodes --output=json'
+                                 ' --context ' + context))
+    node0 = out['items'][0]['metadata']['name']
+    call('kubectl label nodes {} dask_main=thisone'.format(node0))
     par = pardir(name)
     shutil.rmtree(par, True)
-    context = get_context_from_cluster(name)
     conf['context'] = context
     logger.info("Copying template config to %s" % par)
     os.makedirs(par, exist_ok=True)  # not PY2 ?
@@ -144,6 +149,7 @@ def rerender(ctx, cluster, settings_file, args):
 def resize():
     pass
 
+
 def autoscaling_enabled(cluster):
     """
     Returns True if autoscaling is enabled for a cluster; False otherwise.
@@ -154,6 +160,7 @@ def autoscaling_enabled(cluster):
     out = json.loads(out)
     autoscaling_info = out['nodePools'][0].get('autoscaling')
     return autoscaling_info and autoscaling_info.get('enabled')
+
 
 @resize.command("nodes", short_help="Resize the number of nodes in a cluster.")
 @click.pass_context
