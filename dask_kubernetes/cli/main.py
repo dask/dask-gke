@@ -393,11 +393,16 @@ def status(ctx, cluster):
 @click.pass_context
 @click.argument('name', required=True)
 def delete(ctx, name):
+    if not click.confirm('Delete cluster {}?'.format(name)):
+        return
     conf = load_config(name)
     region = conf['cluster']['zone']
     zone = '-'.join(region.split('-')[:2])
     context = get_context_from_settings(name)
     jupyter, jport, jlport, scheduler, sport, bport = services_in_context(context)
+    cmd = "kubectl delete services --all --context {0}".format(context)
+    logger.info(cmd)
+    call(cmd)
     cmd = 'gcloud compute forwarding-rules list --format json'
     logger.info(cmd)
     out = check_output(cmd)

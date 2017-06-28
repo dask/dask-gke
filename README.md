@@ -122,7 +122,8 @@ When you are done, delete the cluster with the following:
 dask-kubernetes delete NAME
 ```
 
-(requests confirmation).
+Note that this asks for confirmation potentially multiple times - you might wish to
+prepend with `yes |` (bash syntax) for automatic confirmation.
 
 
 ## Extras
