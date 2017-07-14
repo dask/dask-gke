@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 MAINTAINER Martin Durant <martin.durant@utoronto.ca>
 
-RUN apt-get update -yqq && apt-get install -yqq bzip2 git graphviz && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -yqq && apt-get install -yqq bzip2 git wget graphviz && rm -rf /var/lib/apt/lists/*
 
 # Configure environment
 ENV LC_ALL=C.UTF-8
