@@ -163,3 +163,17 @@ def write_templates(configs):
 def pardir(cluster):
     return os.sep.join([os.path.expanduser('~'), '.dask', 'kubernetes',
                         cluster])
+
+
+def makedirs(d, exist_ok=False):
+    if six.PY2:
+        try:
+            os.makedirs(d)
+        except OSError as e:
+            if e.args[0] == 17 and exist_ok:
+                # 'File exists'
+                return
+            else:
+                raise
+    else:
+        os.makedirs(d, exist_ok=exist_ok)

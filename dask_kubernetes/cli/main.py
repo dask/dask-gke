@@ -14,7 +14,7 @@ import traceback
 import webbrowser
 
 from .config import setup_logging
-from .utils import (call, check_output, required_commands, get_conf,
+from .utils import (call, check_output, required_commands, get_conf, makedirs,
                     render_templates, write_templates, pardir, load_config)
 
 
@@ -78,11 +78,7 @@ def create(ctx, name, settings_file, set, nowait):
             name, conf['cluster']['num_nodes'], conf['cluster']['machine_type'],
             conf['cluster']['disk_size'],
             autoscaling=autoscaling))
-    try:
-        subprocess.check_call("gcloud container clusters get-credentials {0}".
-                              format(name), shell=True)
-    except:
-        raise RuntimeError('Cluster creation failed!')
+    get_credentials(name)
     context = get_context_from_cluster(name)
     # specify label for notebook and scheduler
     out = json.loads(check_output('kubectl get nodes --output=json'
@@ -93,12 +89,27 @@ def create(ctx, name, settings_file, set, nowait):
     shutil.rmtree(par, True)
     conf['context'] = context
     logger.info("Copying template config to %s" % par)
-    os.makedirs(par, exist_ok=True)  # not PY2 ?
+    makedirs(par, exist_ok=True)
     write_templates(render_templates(conf, par))
     call("kubectl create -f {0}  --save-config".format(par))
     if not nowait:
         wait_until_ready(name, context)
         print_info(name, context)
+
+
+def get_credentials(name):
+    try:
+        subprocess.check_call("gcloud container clusters get-credentials {0}".
+                              format(name), shell=True)
+    except:
+        raise RuntimeError('Connecting to cluster failed!')
+
+
+@cli.command(short_help='Set kubernetes credentials in this shell')
+@click.pass_context
+@click.argument('cluster', required=True)
+def credentials(ctx, cluster):
+    get_credentials(cluster)
 
 
 def wait_until_ready(cluster, context=None, poll_time=3):
@@ -365,7 +376,7 @@ def notebook(ctx, cluster):
         logger.info('Notebook service not ready')
 
 
-@cli.command(short_help='Open the remote jupyter notebook in the browser')
+@cli.command(short_help='Open the remote jupyter-lab application in the browser')
 @click.pass_context
 @click.argument('cluster', required=True)
 def lab(ctx, cluster):
