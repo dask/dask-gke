@@ -124,8 +124,8 @@ def get_conf(settings, args=None):
     factor = float(conf['workers']['mem_factor'])
     conf['workers']['memory_per_worker2'] = int(factor * mem_bytes(
         conf['workers']['memory_per_worker']))
-    conf['workers']['cpus_per_worker2'] = ceil(
-        float(conf['workers']['cpus_per_worker']))
+    conf['workers']['cpus_per_worker2'] = int(ceil(
+        float(conf['workers']['cpus_per_worker'])))
     return conf
 
 
