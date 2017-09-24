@@ -19,12 +19,12 @@ ENV PATH="/work/bin:/work/miniconda/bin:$PATH"
 # Install pydata stack
 RUN conda config --set always_yes yes --set changeps1 no --set auto_update_conda no
 RUN conda install notebook ipywidgets psutil numpy scipy pandas bokeh scikit-learn statsmodels pip numba \
-        scikit-image datashader holoviews nomkl matplotlib lz4 tornado=4.4
+        scikit-image datashader holoviews nomkl matplotlib lz4 tornado
 RUN conda install -c conda-forge fastparquet s3fs zict python-blosc cytoolz dask distributed jupyter_dashboards jupyterlab dask-searchcv \
  && conda clean -tipsy \
  && jupyter nbextension enable jupyter_dashboards --py --sys-prefix \
  && pip install git+https://github.com/martindurant/gcsfs.git \
- && pip install git+https://github.com/dask/dask-glm.git \
+ && pip install git+https://github.com/dask/dask-glm.git --no-deps\
  && pip install graphviz
 
 # Optional: Install the master branch of distributed and dask
