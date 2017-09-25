@@ -18,17 +18,28 @@ ENV PATH="/work/bin:/work/miniconda/bin:$PATH"
 
 # Install pydata stack
 RUN conda config --set always_yes yes --set changeps1 no --set auto_update_conda no
-RUN conda install notebook ipywidgets psutil numpy scipy pandas bokeh scikit-learn statsmodels pip numba \
+RUN conda install notebook psutil numpy pandas scikit-learn statsmodels pip numba \
         scikit-image datashader holoviews nomkl matplotlib lz4 tornado
-RUN conda install -c conda-forge fastparquet s3fs zict python-blosc cytoolz dask distributed jupyter_dashboards jupyterlab dask-searchcv gcsfs \
+RUN conda install -c conda-forge fastparquet s3fs zict python-blosc cytoolz dask distributed dask-searchcv gcsfs \
  && conda clean -tipsy \
- && jupyter nbextension enable jupyter_dashboards --py --sys-prefix \
  && pip install git+https://github.com/dask/dask-glm.git --no-deps\
  && pip install graphviz
 
+RUN conda install -c conda-forge nodejs
+RUN conda install -c conda-forge jupyterlab jupyter_dashboards ipywidgets \
+ && jupyter labextension install @jupyter-widgets/jupyterlab-manager \
+ && jupyter nbextension enable jupyter_dashboards --py --sys-prefix \
+ && conda clean -tipsy
+
+RUN conda install -c bokeh bokeh \
+ && jupyter labextension install jupyterlab_bokeh \
+ && conda clean -tipsy
+
+RUN npm cache clean
+
 # Optional: Install the master branch of distributed and dask
-#RUN pip install git+https://github.com/dask/dask --upgrade --no-deps
-#RUN pip install git+https://github.com/dask/distributed --upgrade --no-deps
+RUN pip install git+https://github.com/dask/dask --upgrade --no-deps
+RUN pip install git+https://github.com/dask/distributed --upgrade --no-deps
 
 # Install Tini that necessary to properly run the notebook service in docker
 # http://jupyter-notebook.readthedocs.org/en/latest/public_server.html#docker-cmd
