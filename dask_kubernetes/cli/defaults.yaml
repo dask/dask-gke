@@ -1,27 +1,29 @@
 cluster:
-  num_nodes: 3
-  machine_type: n1-standard-8
-  disk_size: 50
-  zone: us-east1-b
-  autoscaling: False
-  min_nodes: 2
-  max_nodes: 32
+  num_nodes: 3                 # how many machines to ask Google for
+  machine_type: n1-standard-8  # type of each machine https://cloud.google.com/compute/docs/machine-types
+  disk_size: 50                # local volume size (GB) available on each machine
+  zone: us-east1-b             # one of https://cloud.google.com/compute/docs/regions-zones/
+  autoscaling: False           # whether to spin up/down nodes as number of containers is changed
+  min_nodes: 2                 # if autoscaling, never have fewer than this many machines
+  max_nodes: 32                # if autoscaling, never have more than this many machines
 jupyter:
-  memory: 4096Mi
-  cpus: 1
-  port: 8888
-  lab_port: 8889
-  image: mdurant/dask-kubernetes:latest
+  memory: 4096Mi               # memory allocated to the jupyter container, including all kernels
+  cpus: 1                      # cores used by the jupyter container, including kernels
+  port: 8888                   # external HTTP access port for jupyter notebook
+  lab_port: 8889               # external HTTP access port for jupyterlab interface
+  image: mdurant/dask-kubernetes:latest  # docker image of the jupyter environment
 scheduler:
-  memory: 4096Mi
-  cpus: 1
-  image: mdurant/dask-kubernetes:latest
-  tcp_port: 8786
-  http_port: 9786
-  bokeh_port: 8787
+  memory: 4096Mi               # memory allocated for the dask scheduler container
+  cpus: 1                      # cores used for the scheduler (which is a single-threaded process)
+  image: mdurant/dask-kubernetes:latest  # docker image of the dask scheduler's environment
+  tcp_port: 8786               # external access port for the scheduler, through which clients connect
+  http_port: 9786              # external HTTP port for REST/JSON information from the scheduler
+  bokeh_port: 8787             # external HTTP port for the diagnostics dashboards
 workers:
-  count: 8
-  cpus_per_worker: 1.8
-  memory_per_worker: 6800Mi
-  mem_factor: 0.95
-  image: mdurant/dask-kubernetes:latest
+  count: 8                     # number of worker containers to launch, with one worker process per container
+  cpus_per_worker: 1.8         # cores allocated per worker container; the number of threads per worker will
+                               # be rounded up to an integer
+  memory_per_worker: 6800Mi    # memory of each worker container
+  mem_factor: 0.95             # memory limit option to pass to worker will be this multiplied by the container limit;
+                               # slightly less than one, so worker should not exceed available memory in the container
+  image: mdurant/dask-kubernetes:latest  # docker image of each worker's environment
