@@ -6,6 +6,7 @@ cluster:
   autoscaling: False
   min_nodes: 2
   max_nodes: 32
+  preemptible: False
 jupyter:
   memory: 4096Mi
   cpus: 1
