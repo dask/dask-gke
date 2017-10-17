@@ -72,12 +72,17 @@ def create(ctx, name, settings_file, set, nowait):
                 max=conf['cluster']['max_nodes']))
     else:
         autoscaling = ''
+    if conf['cluster']['preemptible']:
+        preemptible = '--preemptible'
+    else:
+        preemptible = ''
     call("gcloud container clusters create {0} --num-nodes {1} --machine-type"
-         " {2} --no-async --disk-size {3} {autoscaling} --tags=dask --scopes "
+         " {2} --no-async --disk-size {3} {autoscaling} {preemptible} --tags=dask --scopes "
          "https://www.googleapis.com/auth/cloud-platform".format(
             name, conf['cluster']['num_nodes'], conf['cluster']['machine_type'],
             conf['cluster']['disk_size'],
-            autoscaling=autoscaling))
+            autoscaling=autoscaling,
+            preemptible=preemptible))
     get_credentials(name)
     context = get_context_from_cluster(name)
     # specify label for notebook and scheduler
