@@ -6,6 +6,7 @@ cluster:
   autoscaling: False           # whether to spin up/down nodes as number of containers is changed
   min_nodes: 2                 # if autoscaling, never have fewer than this many machines
   max_nodes: 32                # if autoscaling, never have more than this many machines
+  preemptible: False           # cheaper nodes that may be killed at any time
 jupyter:
   memory: 4096Mi               # memory allocated to the jupyter container, including all kernels
   cpus: 1                      # cores used by the jupyter container, including kernels
