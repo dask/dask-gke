@@ -8,15 +8,18 @@ ecosystems.
 
 *This is a work in progress*
 
-The Kubernetes API is provided as a hosted service by:
+The Kubernetes API is provided as a managed service by the following public cloud
+providers:
 
-- [Google Container Engine](https://cloud.google.com/container-engine/)
+- [Google Container Engine (GKE)](https://cloud.google.com/container-engine/)
 - [OpenShift by Red Hat](https://www.openshift.com/)
+- [Azure Container Service (AKS)](https://azure.microsoft.com/en-us/services/container-service/)
+- [Amazon Elastic Container Service for Kubernetes ](https://aws.amazon.com/eks/)
 
 Alternatively it is possible to [install and manage Kubernetes by
 your-self](http://kubernetes.io/docs/getting-started-guides/).
 
-We will briefly describe usage assuming Google Container Engine (GCE)
+We will briefly describe usage assuming Google Container Engine (GKE).
 
 ## The dask-kubernetes image
 
