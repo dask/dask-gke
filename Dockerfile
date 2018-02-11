@@ -33,13 +33,14 @@ RUN conda install -c conda-forge jupyterlab jupyter_dashboards ipywidgets \
 
 RUN conda install -c bokeh bokeh \
  && jupyter labextension install jupyterlab_bokeh \
- && conda clean -tipsy
-
-RUN npm cache clean
+ && conda clean -tipsy \
+ && npm cache clean --force
 
 # Optional: Install the master branch of distributed and dask
-RUN pip install git+https://github.com/dask/dask --upgrade --no-deps
-RUN pip install git+https://github.com/dask/distributed --upgrade --no-deps
+RUN pip install git+https://github.com/dask/dask --upgrade --no-deps \
+ && pip install git+https://github.com/dask/distributed --upgrade --no-deps \
+ && pip install git+https://github.com/pydata/xarray --upgrade \
+ && pip install git+https://github.com/zarr-developers/zarr --upgrade
 
 # Install Tini that necessary to properly run the notebook service in docker
 # http://jupyter-notebook.readthedocs.org/en/latest/public_server.html#docker-cmd
