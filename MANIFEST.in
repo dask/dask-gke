@@ -1,1 +1,1 @@
-recursive-include dask_kubernetes *.yaml *.py
+recursive-include dask_gke *.yaml *.py

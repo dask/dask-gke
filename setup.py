@@ -7,10 +7,10 @@ from setuptools import find_packages, setup
 with open('README.md', encoding='utf-8') as f:
     readme = f.read()
 
-setup(name="dask-kubernetes",
+setup(name="dask-gke",
       version="0.0.1",
       description="Dask Kubernetes",
-      url="https://github.com/martindurant/dask-kubernetes",
+      url="https://github.com/martindurant/dask-gke",
       author="Martin Durant",
       author_email="mdurant@continuum.io",
       keywords='kubernetes',
@@ -23,8 +23,8 @@ setup(name="dask-kubernetes",
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
       ],
-      packages=['dask_kubernetes'],
-      package_dirs={'dask_kubernetes': ['dask_kubernetes']},
+      packages=['dask_gke'],
+      package_dirs={'dask_gke': ['dask_gke']},
       install_requires=['click'],
       zip_safe=False,
       package_data={'kubernetes': ['*.yaml']},
@@ -32,5 +32,5 @@ setup(name="dask-kubernetes",
       long_description=readme,
       entry_points="""
         [console_scripts]
-        dask-kubernetes=dask_kubernetes.cli.main:start
+        dask-gke=dask_gke.cli.main:start
       """)

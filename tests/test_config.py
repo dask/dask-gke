@@ -1,7 +1,7 @@
 import io
 from textwrap import dedent
 import os
-from dask_kubernetes.cli.utils import get_conf, render_templates
+from dask_gke.cli.utils import get_conf, render_templates
 
 import pytest
 

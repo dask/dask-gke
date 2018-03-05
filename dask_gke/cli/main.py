@@ -36,7 +36,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.version_option(prog_name="dask-kubernetes", version="0.0.1")
+@click.version_option(prog_name="dask-gke", version="0.0.1")
 @click.pass_context
 @required_commands("gcloud", "kubectl")
 @click.option('--verbose', '-v', required=False, default=False, is_flag=True)

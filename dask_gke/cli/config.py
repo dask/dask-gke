@@ -7,7 +7,7 @@ def setup_logging(log_level=logging.WARNING):
     # Hide messages if we log before setting up handler
     logging.root.manager.emittedNoHandlerWarning = True
 
-    logger = logging.getLogger("dask_kubernetes")
+    logger = logging.getLogger("dask_gke")
     logger.setLevel(log_level)
     logger.propagate = False
 

@@ -1,12 +1,14 @@
-# Kubernetes provisioning of a Dask Distributed cluster
+# Google Container Engine provisioning of a Dask Distributed cluster
+
+*Historical Note: this repository is somewhat old and not actively maintained.
+For more general documentation on deploying Dask on Kubernetes or Cloud
+clusters we recommend referring to the
+[Dask setup documentation](http://dask.pydata.org/en/latest/setup.html)*
 
 This repo hosts some sample configuration to set up Kubernetes containerized
 environments for interactive cluster computing in Python with [Jupyter
-notebook](http://jupyter.org/) [dask](http://dask.pydata.org/)
-and other tools from the PyData and SciPy
-ecosystems.
-
-*This is a work in progress*
+notebook](http://jupyter.org/) [Dask](http://dask.pydata.org/)
+and other tools from the PyData and SciPy ecosystems.
 
 The Kubernetes API is provided as a managed service by the following public cloud
 providers:
@@ -17,11 +19,11 @@ providers:
 - [Amazon Elastic Container Service for Kubernetes ](https://aws.amazon.com/eks/)
 
 Alternatively it is possible to [install and manage Kubernetes by
-your-self](http://kubernetes.io/docs/getting-started-guides/).
+yourself](http://kubernetes.io/docs/getting-started-guides/).
 
 We will briefly describe usage assuming Google Container Engine (GKE).
 
-## The dask-kubernetes image
+## The dask-gke image
 
 The `Dockerfile` file in this repo can be used to build a docker image
 with all the necessary tools to run our cluster, in particular:
@@ -61,7 +63,7 @@ Ensure that your client SDK is up to date:
 $ gcloud components update
 ```
 
-Install `dask-kubernetes` CLI via:
+Install `dask-gke` CLI via:
 
 ```
 $ python setup.py install
@@ -71,7 +73,7 @@ $ python setup.py install
 
 
 Default settings for the cluster are stored in
-[defaults.yaml](dask_kubernetes/cli/defaults.yaml)
+[defaults.yaml](dask_gke/cli/defaults.yaml)
 
 The easiest way to customize the cluster to your own purposes is to make
 a copy of this file, edit it, and supply it on the command line. The settings
@@ -81,19 +83,19 @@ new values in a supplied file, and command-line options
 To launch with default values only (where NAME is the label for the cluster):
 
 ```bash
-dask-kubernetes create NAME
+dask-gke create NAME
 ```
 
 To launch with a provided file:
 
 ```bash
-dask-kubernetes create NAME settings.yaml
+dask-gke create NAME settings.yaml
 ```
 
 To launch with a single override parameter
 
 ```bash
-dask-kubernetes create -s jupyter.port=443 NAME
+dask-gke create -s jupyter.port=443 NAME
 ```
 
 By default, the process will block until done, and then print details
@@ -104,7 +106,7 @@ Most users will want to navigate to the notebook first, which can also
 be achieved by calling
 
 ```bash
-dask-kubernetes notebook NAME
+dask-gke notebook NAME
 ```
 
 and similarly, the `status` command opens the cluster status page, or `lab`
@@ -122,7 +124,7 @@ c = Client('dask-scheduler:8786')
 When you are done, delete the cluster with the following:
 
 ```bash
-dask-kubernetes delete NAME
+dask-gke delete NAME
 ```
 
 Note that this asks for confirmation potentially multiple times - you might wish to
@@ -131,13 +133,13 @@ prepend with `yes |` (bash syntax) for automatic confirmation.
 
 ## Extras
 
-`dask-kubernetes` work by calling `kubectl`. For those who want finer control
+`dask-gke ` work by calling `kubectl`. For those who want finer control
 or to investigate the state of the cluster, `kubectl` commands can be
 entered on the command line as for any other Kubernetes cluster. Furthermore,
 the Kubernetes dashboard is available using
 
 ```bash
-dask-kubernetes dashboard NAME
+dask-gke dashboard NAME
 ```
 
 (note that, unlike the other commands which open browser tabs, this command
@@ -151,7 +153,7 @@ power and memory, you must both increase the number of machines and the number o
 To add machines to the cluster, you may do the following
 
 ```bash
-dask-kubernetes resize nodes NAME COUNT
+dask-gke resize nodes NAME COUNT
 ```
 
 (of course, the more machines, the higher the bill will be)
@@ -159,13 +161,13 @@ dask-kubernetes resize nodes NAME COUNT
 To add worker containers, you may do the following
 
 ```bash
-dask-kubernetes resize pods NAME COUNT
+dask-gke resize pods NAME COUNT
 ```
 
 or resize both while keeping the workers:nodes ratio constant
 
 ```bash
-dask-kubernetes resize both NAME COUNT
+dask-gke resize both NAME COUNT
 ```
 
 (you give the new number of workers requested).
@@ -187,7 +189,7 @@ and must  be turned on when the cluster is created.
 
 To enable autoscaling, change the appropriate line in `defaults.yaml` or run:
 ```bash
-dask-kubernetes create NAME -s cluster.autoscaling=True -s cluster.min_nodes=MIN -s cluster.max_nodes=MAX
+dask-gke create NAME -s cluster.autoscaling=True -s cluster.min_nodes=MIN -s cluster.max_nodes=MAX
 ```
 
 ### Logs
@@ -238,8 +240,8 @@ programmatically call commands on the worker containers.
 
 ### Alternate docker image
 
-Each type of pod in dask-kubernetes currently is founded on the docker image
-``mdurant/dask-kubernetes:latest``. The Dockerfile is included in this repo. Users
+Each type of pod in dask-gke currently is founded on the docker image
+``mdurant/dask-gke:latest``. The Dockerfile is included in this repo. Users
 may wish to alter particularly the conda/pip installations in the middle of the work-flow.
 
 There are two ways to apply changes made to a dask cluster:

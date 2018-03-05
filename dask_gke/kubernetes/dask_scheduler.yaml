@@ -29,7 +29,7 @@ spec:
           - name: bokeh
             containerPort: 8787
           resources:
-            requests: 
+            requests:
               cpu: {{scheduler.cpus}}
               memory: {{scheduler.memory}}
           imagePullPolicy: Always

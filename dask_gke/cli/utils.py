@@ -139,7 +139,7 @@ def render_templates(conf, par):
     par: str
         Directory to write to
     """
-    loader = jinja2.PackageLoader("dask_kubernetes", package_path="kubernetes")
+    loader = jinja2.PackageLoader("dask_gke", package_path="kubernetes")
     jenv = jinja2.Environment(loader=loader)
     configs = {
         os.path.join(par, name): jenv.get_template(name).render(conf)
